@@ -64,7 +64,11 @@ export default function AuthPage() {
     try {
       if (!firstName.trim()) throw new Error(lang === 'es' ? 'El nombre es requerido' : 'First name is required')
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
-      const { data, error: authErr } = await supabase.auth.signUp({ email, password })
+      const { data, error: authErr } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { data: { full_name: fullName, phone, language: lang } }
+      })
       if (authErr) throw authErr
       const userId = data.user.id
       const role = inviteToken ? 'contractor' : 'owner'

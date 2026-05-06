@@ -8,23 +8,17 @@ import { useState, useRef } from 'react'
 import { supabase } from './lib/supabase'
 
 function PhotoRequiredScreen() {
-  const { profile, loadProfile } = useApp()
+  const { profile, setProfile } = useApp()
   const photoInput = useRef(null)
   const [saving, setSaving] = useState(false)
 
   async function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    const objectUrl = URL.createObjectURL(file)
-    setCropSrc(objectUrl)
-    setShowCrop(true)
-  }
-
-  async function handleCropDone(blob) {
-    setShowCrop(false); setSaving(true)
+    setSaving(true)
     try {
       const path = `profiles/${profile.id}/avatar_${Date.now()}.jpg`
-      const { error: uploadErr } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+      const { error: uploadErr } = await supabase.storage.from('fieldsnap-uploads').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true })
       if (uploadErr) { alert('Upload error: ' + uploadErr.message); setSaving(false); return }
       const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
       const { error: updateErr } = await supabase.from('profiles').update({ photo_url: data.publicUrl }).eq('id', profile.id)
@@ -60,9 +54,7 @@ function PhotoRequiredScreen() {
             : (profile?.language === 'es' ? 'Agregar foto de perfil' : 'Add Profile Photo')}
         </button>
         <input ref={photoInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
-
       </div>
-
     </div>
   )
 }

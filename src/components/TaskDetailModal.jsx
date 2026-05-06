@@ -24,7 +24,9 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const commentInput = useRef(null)
   const fileInput    = useRef(null)
   const beforeInput  = useRef(null)
+  const beforeGallery = useRef(null)
   const afterInput   = useRef(null)
+  const afterGallery  = useRef(null)
 
   const isCompleted = task.status === 'completed'
   const title     = lang==='es' ? (task.title_es||task.title_en) : (task.title_en||task.title_es)
@@ -163,10 +165,12 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Antes' : 'Before Photos'} ({beforePhotos.length > 0 ? beforePhotos.length : 1}/5)</p>
                 {!isCompleted && (beforePhotos.length < 5) && (
-                  <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
-                    className="text-xs text-brand-600 font-semibold">
-                    + {lang === 'es' ? 'Agregar' : 'Add'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
+                      className="text-xs text-brand-600 font-semibold">📷</button>
+                    <button onClick={() => beforeGallery.current?.click()} disabled={uploadingPhoto}
+                      className="text-xs text-brand-600 font-semibold">🖼️</button>
+                  </div>
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -178,15 +182,25 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 ))}
               </div>
               <input ref={beforeInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
+              <input ref={beforeGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
             </div>
           )}
           {!isCompleted && beforePhotos.length === 0 && !task.photo_url && (
             <div className="mb-4">
-              <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
-                className="w-full h-20 border-2 border-dashed border-brand-300 rounded-xl flex items-center justify-center text-brand-600 text-sm font-medium">
-                📷 {lang === 'es' ? 'Agregar foto antes' : 'Add before photo'}
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
+                  className="flex-1 h-16 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 text-brand-600">
+                  <span className="text-xl">📷</span>
+                  <span className="text-xs">{lang === 'es' ? 'Cámara' : 'Camera'}</span>
+                </button>
+                <button onClick={() => beforeGallery.current?.click()} disabled={uploadingPhoto}
+                  className="flex-1 h-16 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-500">
+                  <span className="text-xl">🖼️</span>
+                  <span className="text-xs">{lang === 'es' ? 'Galería' : 'Gallery'}</span>
+                </button>
+              </div>
               <input ref={beforeInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
+              <input ref={beforeGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
             </div>
           )}
 
@@ -224,10 +238,12 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Después' : 'After Photos'} ({afterPhotos.length > 0 ? afterPhotos.length : 1}/5)</p>
                 {isCompleted && afterPhotos.length < 5 && (
-                  <button onClick={() => afterInput.current?.click()} disabled={uploadingPhoto}
-                    className="text-xs text-brand-600 font-semibold">
-                    + {lang === 'es' ? 'Agregar' : 'Add'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => afterInput.current?.click()} disabled={uploadingPhoto}
+                      className="text-xs text-brand-600 font-semibold">📷</button>
+                    <button onClick={() => afterGallery.current?.click()} disabled={uploadingPhoto}
+                      className="text-xs text-brand-600 font-semibold">🖼️</button>
+                  </div>
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -239,6 +255,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 ))}
               </div>
               <input ref={afterInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'after')} />
+              <input ref={afterGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'after')} />
             </div>
           )}
 

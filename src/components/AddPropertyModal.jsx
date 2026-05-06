@@ -76,7 +76,8 @@ export default function AddPropertyModal({ onClose, onCreated }) {
     const road = abbreviateDirection(addr.road || addr.pedestrian || '')
     const newStreet = `${houseNumber} ${road}`.trim()
     const newCity = addr.city || addr.town || addr.village || addr.county || ''
-    const newState = addr.state_code || (addr.state || '').substring(0, 2).toUpperCase()
+    const stateMap = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY'}
+    const newState = stateMap[addr.state] || addr.state_code || (addr.state || '').substring(0, 2).toUpperCase()
     const newZip = addr.postcode || ''
     setStreet(newStreet)
     setCity(newCity)
@@ -144,7 +145,8 @@ export default function AddPropertyModal({ onClose, onCreated }) {
                 const hn = a.house_number || ''
                 const rd = a.road || a.pedestrian || ''
                 const city = a.city || a.town || a.village || ''
-                const st = a.state_code || (a.state||'').substring(0,2).toUpperCase()
+                const stMap = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY'}
+                const st = stMap[a.state] || a.state_code || (a.state||'').substring(0,2).toUpperCase()
                 const zip = a.postcode || ''
                 const label = `${hn} ${rd}`.trim() + (city ? `, ${city}` : '') + (st ? `, ${st}` : '') + (zip ? ` ${zip}` : '')
                 return (

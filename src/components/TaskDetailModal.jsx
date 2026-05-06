@@ -173,7 +173,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {task.photo_url && beforePhotos.length === 0 && (
+                {task.photo_url && (
                   <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="before" />
                 )}
                 {beforePhotos.map(p => (

@@ -15,6 +15,7 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   const [annotateIndex, setAnnotateIndex] = useState(null)
   const [saving, setSaving]     = useState(false)
   const [showPhotoChoice, setShowPhotoChoice] = useState(false)
+  const [showPhotoWarning, setShowPhotoWarning] = useState(false)
   const cameraInput = useRef(null)
   const galleryInput = useRef(null)
 
@@ -155,17 +156,43 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
                   className="w-full btn-primary flex items-center justify-center gap-2">
                   <span>📷</span> {lang === 'es' ? 'Tomar foto' : 'Take Photo'}
                 </button>
-                <button onClick={() => { 
+                <button onClick={() => {
                   setShowPhotoChoice(false)
-                  const remaining = 5 - photos.length
-                  alert(lang === 'es' ? `Puedes seleccionar hasta ${remaining} foto(s) más (máximo 5 en total)` : `You can select up to ${remaining} more photo(s) (5 max total)`)
-                  galleryInput.current?.click()
+                  const skip = localStorage.getItem('skipPhotoWarning')
+                  if (skip) { galleryInput.current?.click(); return }
+                  setShowPhotoWarning(true)
                 }}
                   className="w-full btn-secondary flex items-center justify-center gap-2">
                   <span>🖼️</span> {lang === 'es' ? 'Elegir de galería' : 'Choose from Gallery'}
                 </button>
                 <button onClick={() => setShowPhotoChoice(false)}
                   className="w-full text-gray-400 text-sm py-2">{lang === 'es' ? 'Cancelar' : 'Cancel'}</button>
+              </div>
+            </div>
+          )}
+
+          {showPhotoWarning && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{background:'rgba(0,0,0,0.5)'}}>
+              <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                <p className="font-semibold text-gray-800 mb-2">{lang === 'es' ? 'Límite de fotos' : 'Photo Limit'}</p>
+                <p className="text-gray-600 text-sm mb-5">
+                  {lang === 'es'
+                    ? `Puedes seleccionar hasta ${5 - photos.length} foto(s) más (máximo 5 en total).`
+                    : `You can select up to ${5 - photos.length} more photo(s) (5 max total).`}
+                </p>
+                <button onClick={() => {
+                  setShowPhotoWarning(false)
+                  galleryInput.current?.click()
+                }} className="w-full btn-primary mb-2">
+                  {lang === 'es' ? 'Okay' : 'Okay'}
+                </button>
+                <button onClick={() => {
+                  localStorage.setItem('skipPhotoWarning', '1')
+                  setShowPhotoWarning(false)
+                  galleryInput.current?.click()
+                }} className="w-full text-gray-400 text-sm py-2">
+                  {lang === 'es' ? 'No mostrar de nuevo' : 'Do not show again'}
+                </button>
               </div>
             </div>
           )}

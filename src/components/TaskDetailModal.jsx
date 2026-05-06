@@ -8,6 +8,8 @@ import AnnotationCanvas from './AnnotationCanvas'
 export default function TaskDetailModal({ task, lang, propertyId, onClose, onRefresh }) {
   const { profile } = useApp()
   const isOwner = profile?.role === 'owner'
+  const [editingDueDate, setEditingDueDate] = useState(false)
+  const [dueDateValue, setDueDateValue] = useState(task.due_date ? task.due_date.slice(0,10) : '')
   const [comments, setComments]     = useState([])
   const [commentText, setCommentText] = useState('')
   const [mentionSuggestions, setMentionSuggestions] = useState([])
@@ -280,12 +282,30 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 <p className="font-semibold text-gray-700">{task.creator.name}</p>
               </div>
             )}
-            {task.due_date && (
-              <div className="bg-gray-50 rounded-xl p-3">
-                <p className="text-xs text-gray-400">{t('taskDetail.dueDate', lang)}</p>
-                <p className="font-semibold text-gray-700">{formatShortDate(task.due_date, lang)}</p>
-              </div>
-            )}
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400">{t('taskDetail.dueDate', lang)}</p>
+              {editingDueDate ? (
+                <div className="flex gap-2 mt-1">
+                  <input type="date" value={dueDateValue} onChange={e => setDueDateValue(e.target.value)}
+                    className="input text-sm py-1 flex-1" />
+                  <button onClick={async () => {
+                    await supabase.from('tasks').update({ due_date: dueDateValue || null }).eq('id', task.id)
+                    setEditingDueDate(false)
+                    onRefresh()
+                  }} className="text-xs text-brand-600 font-semibold">✓</button>
+                  <button onClick={() => setEditingDueDate(false)} className="text-xs text-gray-400">✕</button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-gray-700">{task.due_date ? formatShortDate(task.due_date, lang) : (lang === 'es' ? 'Sin fecha' : 'No date')}</p>
+                  {isOwner && !isCompleted && (
+                    <button onClick={() => setEditingDueDate(true)} className="text-xs text-brand-600 font-semibold">
+                      {lang === 'es' ? 'Editar' : 'Edit'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             {task.completer?.name && (
               <div className="bg-green-50 rounded-xl p-3">
                 <p className="text-xs text-green-600">{t('taskDetail.completedBy', lang)}</p>

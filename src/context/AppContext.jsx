@@ -103,7 +103,7 @@ export function AppProvider({ children }) {
 
   async function markNotificationRead(id) {
     await supabase.from('notifications').update({ read: true }).eq('id', id)
-    setNotifications(prev => prev.filter(n => n.id !== id))
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
   // ── Translation helper ──────────────────────────────────────────────

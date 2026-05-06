@@ -10,6 +10,11 @@ export default function PropertySettingsModal({ property, lang, onClose, onUpdat
   const [city, setCity] = useState(property.city || '')
   const [state, setState] = useState(property.state || '')
   const [zip, setZip] = useState(property.zip || '')
+  const [lat, setLat] = useState(property.lat || null)
+  const [lng, setLng] = useState(property.lng || null)
+  const [searchText, setSearchText] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const searchTimer = useRef(null)
   const [photo, setPhoto] = useState(null)
   const [photoError, setPhotoError] = useState('')
   const [allContractors, setAllContractors] = useState([])
@@ -25,6 +30,50 @@ export default function PropertySettingsModal({ property, lang, onClose, onUpdat
   }, [property.id])
 
   function toggle(id) { setAssigned(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]) }
+
+  const stateMap = {'Alabama':'AL','Alaska':'AK','Arizona':'AZ','Arkansas':'AR','California':'CA','Colorado':'CO','Connecticut':'CT','Delaware':'DE','Florida':'FL','Georgia':'GA','Hawaii':'HI','Idaho':'ID','Illinois':'IL','Indiana':'IN','Iowa':'IA','Kansas':'KS','Kentucky':'KY','Louisiana':'LA','Maine':'ME','Maryland':'MD','Massachusetts':'MA','Michigan':'MI','Minnesota':'MN','Mississippi':'MS','Missouri':'MO','Montana':'MT','Nebraska':'NE','Nevada':'NV','New Hampshire':'NH','New Jersey':'NJ','New Mexico':'NM','New York':'NY','North Carolina':'NC','North Dakota':'ND','Ohio':'OH','Oklahoma':'OK','Oregon':'OR','Pennsylvania':'PA','Rhode Island':'RI','South Carolina':'SC','South Dakota':'SD','Tennessee':'TN','Texas':'TX','Utah':'UT','Vermont':'VT','Virginia':'VA','Washington':'WA','West Virginia':'WV','Wisconsin':'WI','Wyoming':'WY'}
+
+  function abbreviateDirection(str) {
+    return str
+      .replace(/North/g,'N').replace(/South/g,'S')
+      .replace(/East/g,'E').replace(/West/g,'W')
+      .replace(/Street/g,'St').replace(/Avenue/g,'Ave')
+      .replace(/Boulevard/g,'Blvd').replace(/Drive/g,'Dr')
+      .replace(/Lane/g,'Ln').replace(/Road/g,'Rd')
+      .replace(/Court/g,'Ct').replace(/Place/g,'Pl')
+  }
+
+  async function searchAddress(text) {
+    if (!text || text.length < 4) { setSuggestions([]); return }
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=5&countrycodes=us`)
+      const data = await res.json()
+      setSuggestions(data)
+    } catch { setSuggestions([]) }
+  }
+
+  function handleSearchChange(e) {
+    const val = e.target.value
+    setSearchText(val)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => searchAddress(val), 400)
+  }
+
+  function selectSuggestion(s) {
+    const addr = s.address
+    const houseNumber = addr.house_number || ''
+    const road = abbreviateDirection(addr.road || addr.pedestrian || '')
+    const newStreet = `${houseNumber} ${road}`.trim()
+    setStreet(newStreet)
+    setCity(addr.city || addr.town || addr.village || addr.county || '')
+    setState(stateMap[addr.state] || addr.state_code || '')
+    setZip(addr.postcode || '')
+    setLat(parseFloat(s.lat))
+    setLng(parseFloat(s.lon))
+    setSearchText('')
+    setSuggestions([])
+    if (!name || name === property.street) setName(newStreet)
+  }
 
   async function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
@@ -43,7 +92,7 @@ export default function PropertySettingsModal({ property, lang, onClose, onUpdat
   async function handleSave() {
     setSaving(true)
     try {
-      const updates = { name, street, city, state, zip }
+      const updates = { name, street, city, state, zip, lat: lat || null, lng: lng || null }
       if (photo) {
         updates.cover_photo_url = await uploadPreparedImage(supabase, 'fieldsnap-uploads', `properties/${property.id}`, photo)
       }
@@ -66,11 +115,36 @@ export default function PropertySettingsModal({ property, lang, onClose, onUpdat
     <Modal onClose={onClose} title={t('property.settings', lang)}>
       <div className="space-y-4">
         <input className="input" placeholder="Property name" value={name} onChange={e=>setName(e.target.value)} />
-        <input className="input" placeholder={t('property.street', lang)} value={street} onChange={e=>setStreet(e.target.value)} />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="relative">
+          <input className="input" placeholder={lang === 'es' ? 'Buscar dirección...' : 'Search address...'}
+            value={searchText} onChange={handleSearchChange} autoComplete="off" />
+          {suggestions.length > 0 && (
+            <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
+              {suggestions.map((s, i) => {
+                const a = s.address
+                const hn = a.house_number || ''
+                const rd = a.road || a.pedestrian || ''
+                const c = a.city || a.town || a.village || ''
+                const st = stateMap[a.state] || a.state_code || ''
+                const z = a.postcode || ''
+                const label = `${hn} ${rd}`.trim() + (c ? `, ${c}` : '') + (st ? `, ${st}` : '') + (z ? ` ${z}` : '')
+                return (
+                  <button key={i} onClick={() => selectSuggestion(s)}
+                    className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <input className="input" placeholder={t('property.street', lang)} value={street} onChange={e=>setStreet(e.target.value)} />
           <input className="input" placeholder={t('property.city', lang)} value={city} onChange={e=>setCity(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
           <input className="input" placeholder={t('property.state', lang)} value={state} onChange={e=>setState(e.target.value.toUpperCase())} maxLength={2} />
-          <input className="input" placeholder={t('property.zip', lang)} value={zip} onChange={e=>setZip(e.target.value)} />
+          <input className="input col-span-2" placeholder={t('property.zip', lang)} value={zip} onChange={e=>setZip(e.target.value)} />
         </div>
 
         <div>

@@ -10,11 +10,12 @@ function shortName(fullName) {
 }
 
 export default function TaskCard({ task, lang: langProp, onTap }) {
-  const { lang: langCtx } = useApp ? useApp() : { lang: langProp }
+  const { lang: langCtx } = useApp()
   const lang = langCtx || langProp
   const isOverdue   = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && task.status !== 'completed'
   const isDueToday  = task.due_date && isToday(parseISO(task.due_date))
-  const title       = lang === 'es' ? (task.title_es || task.title_en) : (task.title_en || task.title_es)
+  const titlePrimary   = lang === 'es' ? (task.title_es || task.title_en) : (task.title_en || task.title_es)
+  const titleSecondary = lang === 'es' ? task.title_en : task.title_es
   const isCompleted = task.status === 'completed'
   const hasBoth     = isCompleted && task.photo_url && task.completion_photo_url
 
@@ -41,7 +42,10 @@ export default function TaskCard({ task, lang: langProp, onTap }) {
 
       {/* Title */}
       <p className="font-semibold text-gray-800 text-sm mb-3 line-clamp-2">
-        {title || t('task.noDescription', lang)}
+        {titlePrimary || t('task.noDescription', lang)}
+        {titleSecondary && titleSecondary !== titlePrimary && (
+          <p className="text-xs text-gray-400 mt-0.5">{titleSecondary}</p>
+        )}
       </p>
 
       {/* Before / After photos — natural height, no cropping */}

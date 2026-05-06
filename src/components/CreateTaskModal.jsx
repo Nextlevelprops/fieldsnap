@@ -14,6 +14,7 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   const [showAnnotate, setShowAnnotate] = useState(false)
   const [annotateIndex, setAnnotateIndex] = useState(null)
   const [saving, setSaving]     = useState(false)
+  const [showPhotoChoice, setShowPhotoChoice] = useState(false)
   const cameraInput = useRef(null)
   const galleryInput = useRef(null)
 
@@ -137,21 +138,32 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
             <p className="text-center text-xs text-gray-400 mb-2">{photos.length}/5 {lang === 'es' ? 'fotos seleccionadas' : 'photos selected'}</p>
           )}
           {photos.length < 5 && (
-            <div className="flex gap-2">
-              <button onClick={() => cameraInput.current?.click()}
-                className="flex-1 h-16 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 text-brand-600 active:scale-95">
-                <span className="text-xl">📷</span>
-                <span className="text-xs font-medium">{t('createTask.camera', lang)}</span>
-              </button>
-              <button onClick={() => galleryInput.current?.click()}
-                className="flex-1 h-16 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-500 active:scale-95">
-                <span className="text-xl">🖼️</span>
-                <span className="text-xs font-medium">{t('createTask.gallery', lang)}</span>
-              </button>
-            </div>
+            <button onClick={() => setShowPhotoChoice(true)}
+              className="w-full h-16 border-2 border-dashed border-brand-300 rounded-xl flex items-center justify-center gap-2 text-brand-600 active:scale-95">
+              <span className="text-xl">📷</span>
+              <span className="text-sm font-medium">{lang === 'es' ? 'Agregar foto' : 'Add Photo'}</span>
+            </button>
           )}
           <input ref={cameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
           <input ref={galleryInput} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />
+
+          {showPhotoChoice && (
+            <div className="fixed inset-0 z-50 flex items-end" style={{background:'rgba(0,0,0,0.5)'}} onClick={() => setShowPhotoChoice(false)}>
+              <div className="w-full bg-white rounded-t-3xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+                <p className="text-center font-semibold text-gray-700 mb-2">{lang === 'es' ? 'Agregar foto' : 'Add Photo'}</p>
+                <button onClick={() => { setShowPhotoChoice(false); cameraInput.current?.click() }}
+                  className="w-full btn-primary flex items-center justify-center gap-2">
+                  <span>📷</span> {lang === 'es' ? 'Tomar foto' : 'Take Photo'}
+                </button>
+                <button onClick={() => { setShowPhotoChoice(false); galleryInput.current?.click() }}
+                  className="w-full btn-secondary flex items-center justify-center gap-2">
+                  <span>🖼️</span> {lang === 'es' ? 'Elegir de galería' : 'Choose from Gallery'}
+                </button>
+                <button onClick={() => setShowPhotoChoice(false)}
+                  className="w-full text-gray-400 text-sm py-2">{lang === 'es' ? 'Cancelar' : 'Cancel'}</button>
+              </div>
+            </div>
+          )}
         </div>
 
         <textarea

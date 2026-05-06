@@ -27,6 +27,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const beforeGallery = useRef(null)
   const afterInput   = useRef(null)
   const afterGallery  = useRef(null)
+  const [showPhotoChoice, setShowPhotoChoice] = useState(null) // 'before' or 'after'
 
   const isCompleted = task.status === 'completed'
   const title     = lang==='es' ? (task.title_es||task.title_en) : (task.title_en||task.title_es)
@@ -165,12 +166,10 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Antes' : 'Before Photos'} ({beforePhotos.length > 0 ? beforePhotos.length : 1}/5)</p>
                 {!isCompleted && (beforePhotos.length < 5) && (
-                  <div className="flex gap-2">
-                    <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
-                      className="text-xs text-brand-600 font-semibold">📷</button>
-                    <button onClick={() => beforeGallery.current?.click()} disabled={uploadingPhoto}
-                      className="text-xs text-brand-600 font-semibold">🖼️</button>
-                  </div>
+                  <button onClick={() => setShowPhotoChoice('before')} disabled={uploadingPhoto}
+                    className="text-xs text-brand-600 font-semibold">
+                    + {lang === 'es' ? 'Agregar' : 'Add'}
+                  </button>
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -185,22 +184,31 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <input ref={beforeGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
             </div>
           )}
+
+          {showPhotoChoice && (
+            <div className="fixed inset-0 z-50 flex items-end" style={{background:'rgba(0,0,0,0.5)'}} onClick={() => setShowPhotoChoice(null)}>
+              <div className="w-full bg-white rounded-t-3xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+                <p className="text-center font-semibold text-gray-700 mb-2">{lang === 'es' ? 'Agregar foto' : 'Add Photo'}</p>
+                <button onClick={() => { const ref = showPhotoChoice === 'before' ? beforeInput : afterInput; setShowPhotoChoice(null); ref.current?.click() }}
+                  className="w-full btn-primary flex items-center justify-center gap-2">
+                  <span>📷</span> {lang === 'es' ? 'Tomar foto' : 'Take Photo'}
+                </button>
+                <button onClick={() => { const ref = showPhotoChoice === 'before' ? beforeGallery : afterGallery; setShowPhotoChoice(null); ref.current?.click() }}
+                  className="w-full btn-secondary flex items-center justify-center gap-2">
+                  <span>🖼️</span> {lang === 'es' ? 'Elegir de galería' : 'Choose from Gallery'}
+                </button>
+                <button onClick={() => setShowPhotoChoice(null)}
+                  className="w-full text-gray-400 text-sm py-2">{lang === 'es' ? 'Cancelar' : 'Cancel'}</button>
+              </div>
+            </div>
+          )}
           {!isCompleted && beforePhotos.length === 0 && !task.photo_url && (
             <div className="mb-4">
-              <div className="flex gap-2">
-                <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
-                  className="flex-1 h-16 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 text-brand-600">
-                  <span className="text-xl">📷</span>
-                  <span className="text-xs">{lang === 'es' ? 'Cámara' : 'Camera'}</span>
-                </button>
-                <button onClick={() => beforeGallery.current?.click()} disabled={uploadingPhoto}
-                  className="flex-1 h-16 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-500">
-                  <span className="text-xl">🖼️</span>
-                  <span className="text-xs">{lang === 'es' ? 'Galería' : 'Gallery'}</span>
-                </button>
-              </div>
-              <input ref={beforeInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
-              <input ref={beforeGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
+              <button onClick={() => setShowPhotoChoice('before')} disabled={uploadingPhoto}
+                className="w-full h-16 border-2 border-dashed border-brand-300 rounded-xl flex items-center justify-center gap-2 text-brand-600">
+                <span className="text-xl">📷</span>
+                <span className="text-sm font-medium">{lang === 'es' ? 'Agregar foto antes' : 'Add Before Photo'}</span>
+              </button>
             </div>
           )}
 
@@ -238,12 +246,10 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Después' : 'After Photos'} ({afterPhotos.length > 0 ? afterPhotos.length : 1}/5)</p>
                 {isCompleted && afterPhotos.length < 5 && (
-                  <div className="flex gap-2">
-                    <button onClick={() => afterInput.current?.click()} disabled={uploadingPhoto}
-                      className="text-xs text-brand-600 font-semibold">📷</button>
-                    <button onClick={() => afterGallery.current?.click()} disabled={uploadingPhoto}
-                      className="text-xs text-brand-600 font-semibold">🖼️</button>
-                  </div>
+                  <button onClick={() => setShowPhotoChoice('after')} disabled={uploadingPhoto}
+                    className="text-xs text-brand-600 font-semibold">
+                    + {lang === 'es' ? 'Agregar' : 'Add'}
+                  </button>
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">

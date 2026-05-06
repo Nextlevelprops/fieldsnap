@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { getBilingualText, getTextPairForLang } from '../lib/translate'
+import { sendPushNotification } from '../lib/push'
 import { t, formatDateTime, formatShortDate } from '../lib/i18n'
 import AnnotationCanvas from './AnnotationCanvas'
 
@@ -130,6 +131,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
       })
       if (mentioned && mentioned.id !== profile.id) {
         await supabase.from('notifications').insert({ user_id: mentioned.id, type:'mention', task_id: task.id, comment_id: comment?.id, read: false })
+        await sendPushNotification(mentioned.id, 'New Mention', `${profile.name} mentioned you in a comment`, '/').catch(console.error)
       }
     }
     setCommentText(''); setSaving(false)
@@ -176,6 +178,11 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
           const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(p)
           await supabase.from('task_photos').insert({ task_id: task.id, photo_url: data.publicUrl, type: 'after' })
         }
+      }
+      // Notify owner on completion
+      const { data: prop } = await supabase.from('properties').select('owner_id').eq('id', propertyId).single()
+      if (prop?.owner_id && prop.owner_id !== profile.id) {
+        await sendPushNotification(prop.owner_id, 'Task Completed', `${profile.name} completed a task`, '/'). catch(console.error)
       }
       onRefresh(); onClose()
     } catch (err) { alert(err.message) }

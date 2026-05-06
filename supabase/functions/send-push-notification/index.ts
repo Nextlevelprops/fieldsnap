@@ -6,6 +6,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function sendWebPush(subscription: any, payload: string, vapidPublicKey: string, vapidPrivateKey: string) {
+  const { default: webpush } = await import("npm:web-push@3.6.7");
+  webpush.setVapidDetails(
+    "mailto:admin@fieldsnap.app",
+    vapidPublicKey,
+    vapidPrivateKey
+  );
+  await webpush.sendNotification(
+    { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
+    payload
+  );
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -33,26 +46,17 @@ serve(async (req) => {
 
     const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
+    const payload = JSON.stringify({ title, body, url: url || "/" });
 
     const results = await Promise.allSettled(
       subscriptions.map(async (sub) => {
-        const payload = JSON.stringify({ title, body, url: url || "/" });
-        
-        const response = await fetch(sub.endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/octet-stream",
-            "TTL": "86400",
-          },
-          body: payload,
-        });
-
-        if (!response.ok) {
-          // Remove dead subscriptions
-          if (response.status === 410) {
+        try {
+          await sendWebPush(sub, payload, vapidPublicKey, vapidPrivateKey);
+        } catch (err: any) {
+          if (err?.statusCode === 410) {
             await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint);
           }
-          throw new Error(`Push failed: ${response.status}`);
+          throw err;
         }
       })
     );
@@ -60,7 +64,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
+  } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

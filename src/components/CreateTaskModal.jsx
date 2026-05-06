@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { getBilingualText } from '../lib/translate'
+import { sendPushNotification } from '../lib/push'
 import { t } from '../lib/i18n'
 import Modal from './Modal'
 import AnnotationCanvas from './AnnotationCanvas'
@@ -108,6 +109,11 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
         }
       }
 
+      // Notify contractors of new task
+      const { data: cons } = await supabase.from('property_contractors').select('contractor_id').eq('property_id', propertyId)
+      for (const c of (cons||[])) {
+        await sendPushNotification(c.contractor_id, 'New Task', 'A new task has been added to your property', '/').catch(console.error)
+      }
       onCreated()
     } catch (err) {
       alert(err.message)

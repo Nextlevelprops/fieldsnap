@@ -338,7 +338,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 )}
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {task.completion_photo_url && afterPhotos.length === 0 && (
+                {task.completion_photo_url && (
                   <div className="relative flex-shrink-0">
                     <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl" alt="after" />
                     <button onClick={async () => {

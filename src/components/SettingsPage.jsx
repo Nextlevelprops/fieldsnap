@@ -160,10 +160,10 @@ export default function SettingsPage({ onBack }) {
   }
 
   async function handleInvite() {
-    // Real invite via Supabase Auth
-    if (!inviteInput.trim()) return; setInviting(true)
-    alert(`${lang === 'es' ? 'Invitación enviada a' : 'Invite sent to'} ${inviteInput}`)
-    setInviteInput(''); setInviting(false)
+    if (!inviteLink) return
+    navigator.clipboard.writeText(inviteLink).then(() => {
+      alert(lang === 'es' ? 'Enlace copiado! Compártelo con tu contratista.' : 'Link copied! Share it with your contractor.')
+    })
   }
 
   async function handleDelete(id) {
@@ -287,9 +287,12 @@ export default function SettingsPage({ onBack }) {
         {isOwner && (
           <div className="card p-5">
             <h2 className="font-bold text-gray-800 mb-4">{t('settings.contractors',lang)}</h2>
-            <div className="flex gap-2 mb-4">
-              <input className="input flex-1 text-sm" placeholder={t('settings.invitePlaceholder',lang)} value={inviteInput} onChange={e=>setInviteInput(e.target.value)} />
-              <button onClick={handleInvite} disabled={inviting||!inviteInput.trim()} className="btn-primary px-4 text-sm py-0">{t('settings.invite',lang)}</button>
+            <div className="mb-4">
+              <p className="text-xs text-gray-500 mb-2">{lang === 'es' ? 'Comparte este enlace con tus contratistas para que se registren:' : 'Share this link with your contractors to sign up:'}</p>
+              <div className="flex gap-2">
+                <div className="input flex-1 text-sm text-gray-500 truncate bg-gray-50">{inviteLink || '...'}</div>
+                <button onClick={handleInvite} disabled={!inviteLink} className="btn-primary px-4 text-sm py-0">{lang === 'es' ? 'Copiar' : 'Copy'}</button>
+              </div>
             </div>
             <div className="space-y-2">
               {contractors.map(c => (

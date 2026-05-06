@@ -12,6 +12,11 @@ export default function AddPropertyModal({ onClose, onCreated }) {
   const [city, setCity]     = useState(() => sessionStorage.getItem('fieldsnap_add_city') || '')
   const [state, setState]   = useState(() => sessionStorage.getItem('fieldsnap_add_state') || '')
   const [zip, setZip]       = useState(() => sessionStorage.getItem('fieldsnap_add_zip') || '')
+  const [lat, setLat]       = useState(null)
+  const [lng, setLng]       = useState(null)
+  const [suggestions, setSuggestions] = useState([])
+  const [searchText, setSearchText] = useState('')
+  const searchTimer = useRef(null)
   const [photo, setPhoto]   = useState(null)
   const [photoError, setPhotoError] = useState('')
   const [contractors, setContractors] = useState([])
@@ -37,6 +42,36 @@ export default function AddPropertyModal({ onClose, onCreated }) {
 
   function toggle(id) { setSelected(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]) }
 
+  async function searchAddress(text) {
+    if (!text || text.length < 4) { setSuggestions([]); return }
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=5&countrycodes=us`)
+      const data = await res.json()
+      setSuggestions(data)
+    } catch { setSuggestions([]) }
+  }
+
+  function handleSearchChange(e) {
+    const val = e.target.value
+    setSearchText(val)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => searchAddress(val), 400)
+  }
+
+  function selectSuggestion(s) {
+    const addr = s.address
+    const houseNumber = addr.house_number || ''
+    const road = addr.road || addr.pedestrian || ''
+    setStreet(`${houseNumber} ${road}`.trim())
+    setCity(addr.city || addr.town || addr.village || addr.county || '')
+    setState(addr.state_code || addr.state || '')
+    setZip(addr.postcode || '')
+    setLat(parseFloat(s.lat))
+    setLng(parseFloat(s.lon))
+    setSearchText(`${houseNumber} ${road}`.trim())
+    setSuggestions([])
+  }
+
   async function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -61,7 +96,8 @@ export default function AddPropertyModal({ onClose, onCreated }) {
       }
       const { data: prop, error } = await supabase.from('properties').insert({
         name: name.trim(), street: street.trim(), city: city.trim(), state: state.trim(), zip: zip.trim(),
-        cover_photo_url: coverUrl, owner_id: profile.id, status: 'active'
+        cover_photo_url: coverUrl, owner_id: profile.id, status: 'active',
+        lat: lat || null, lng: lng || null
       }).select().single()
       if (error) throw error
       if (selected.length > 0) {
@@ -81,11 +117,27 @@ export default function AddPropertyModal({ onClose, onCreated }) {
     <Modal onClose={onClose} title={t('property.new', lang)}>
       <div className="space-y-4">
         <input className="input" placeholder="Property name" value={name} onChange={e=>setName(e.target.value)} />
-        <input className="input" placeholder={t('property.street', lang)} value={street} onChange={e=>setStreet(e.target.value)} />
+        <div className="relative">
+          <input className="input" placeholder={lang === 'es' ? 'Buscar dirección...' : 'Search address...'}
+            value={searchText} onChange={handleSearchChange} />
+          {suggestions.length > 0 && (
+            <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
+              {suggestions.map((s, i) => (
+                <button key={i} onClick={() => selectSuggestion(s)}
+                  className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+                  {s.display_name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <input className="input" placeholder={t('property.street', lang)} value={street} onChange={e=>setStreet(e.target.value)} />
+          <input className="input" placeholder={t('property.city', lang)} value={city} onChange={e=>setCity(e.target.value)} />
+        </div>
         <div className="grid grid-cols-3 gap-2">
-          <input className="input" placeholder={t('property.city', lang)}  value={city}  onChange={e=>setCity(e.target.value)} />
           <input className="input" placeholder={t('property.state', lang)} value={state} onChange={e=>setState(e.target.value.toUpperCase())} maxLength={2} />
-          <input className="input" placeholder={t('property.zip', lang)}   value={zip}   onChange={e=>setZip(e.target.value)} />
+          <input className="input col-span-2" placeholder={t('property.zip', lang)} value={zip} onChange={e=>setZip(e.target.value)} />
         </div>
 
         <div>

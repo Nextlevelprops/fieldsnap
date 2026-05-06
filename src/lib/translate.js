@@ -147,15 +147,15 @@ export async function translateText(text, fromLang, toLang) {
   // Try MyMemory free translation API (1000 free requests/day)
   try {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 3000)
-    const langPair = `${fromLang}|${toLang}`
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`
+    const timer = setTimeout(() => controller.abort(), 5000)
+    const langPair = `${fromLang}-${fromLang === 'en' ? 'GB' : 'ES'}|${toLang}-${toLang === 'en' ? 'GB' : 'ES'}`
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}&de=noreply@nextlevelprops.com`
     const res = await fetch(url, { signal: controller.signal })
     clearTimeout(timer)
     if (res.ok) {
       const data = await res.json()
       const translated = String(data.responseData?.translatedText || '').trim()
-      if (translated && translated.toLowerCase() !== text.toLowerCase()) return translated
+      if (translated && translated.toLowerCase() !== text.toLowerCase() && !translated.includes('MYMEMORY')) return translated
     }
   } catch {
     // fall through to local

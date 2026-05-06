@@ -286,13 +286,12 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <p className="text-xs text-gray-400">{t('taskDetail.dueDate', lang)}</p>
               {editingDueDate ? (
                 <div className="flex gap-2 mt-1">
-                  <input type="date" value={dueDateValue} onChange={e => setDueDateValue(e.target.value)}
-                    className="input text-sm py-1 flex-1" />
-                  <button onClick={async () => {
-                    await supabase.from('tasks').update({ due_date: dueDateValue || null }).eq('id', task.id)
+                  <input type="date" value={dueDateValue} onChange={async e => {
+                    setDueDateValue(e.target.value)
+                    await supabase.from('tasks').update({ due_date: e.target.value || null }).eq('id', task.id)
                     setEditingDueDate(false)
                     onRefresh()
-                  }} className="text-xs text-brand-600 font-semibold">✓</button>
+                  }} className="input text-sm py-1 flex-1" />
                   <button onClick={() => setEditingDueDate(false)} className="text-xs text-gray-400">✕</button>
                 </div>
               ) : (

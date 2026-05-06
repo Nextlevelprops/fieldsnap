@@ -15,20 +15,22 @@ function PhotoRequiredScreen() {
   async function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => { setCropSrc(ev.target.result); setShowCrop(true) }
-    reader.readAsDataURL(file)
+    const objectUrl = URL.createObjectURL(file)
+    setCropSrc(objectUrl)
+    setShowCrop(true)
   }
 
   async function handleCropDone(blob) {
     setShowCrop(false); setSaving(true)
     try {
       const path = `profiles/${profile.id}/avatar_${Date.now()}.jpg`
-      await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+      const { error: uploadErr } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+      if (uploadErr) { alert('Upload error: ' + uploadErr.message); setSaving(false); return }
       const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
-      await supabase.from('profiles').update({ photo_url: data.publicUrl }).eq('id', profile.id)
-      await loadProfile(profile.id)
-    } catch(e) { alert('Error saving photo, please try again.') }
+      const { error: updateErr } = await supabase.from('profiles').update({ photo_url: data.publicUrl }).eq('id', profile.id)
+      if (updateErr) { alert('Save error: ' + updateErr.message); setSaving(false); return }
+      await loadProfile({ id: profile.id, email: profile.email })
+    } catch(e) { alert('Error: ' + e.message) }
     setSaving(false)
   }
 

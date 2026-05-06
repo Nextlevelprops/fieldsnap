@@ -12,10 +12,14 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const [mentionSuggestions, setMentionSuggestions] = useState([])
   const [contractors, setContractors] = useState([])
   const [showComplete, setShowComplete] = useState(false)
+  const [compPhotos, setCompPhotos] = useState([]) // [{file, preview}]
   const [compPhoto, setCompPhoto]   = useState(null)
   const [compPreview, setCompPreview] = useState(null)
   const [showAnnotate, setShowAnnotate] = useState(false)
   const [annotatedBlob, setAnnotatedBlob] = useState(null)
+  const [showCompPhotoChoice, setShowCompPhotoChoice] = useState(false)
+  const compCameraInput = useRef(null)
+  const compGalleryInput = useRef(null)
   const [saving, setSaving]     = useState(false)
   const [completing, setCompleting] = useState(false)
   const [beforePhotos, setBeforePhotos] = useState([])
@@ -115,22 +119,47 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   }
 
   function handlePhotoSelect(e) {
-    const file = e.target.files?.[0]; if (!file) return
-    setCompPhoto(file); setAnnotatedBlob(null)
-    const reader = new FileReader()
-    reader.onload = ev => setCompPreview(ev.target.result)
-    reader.readAsDataURL(file)
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    const remaining = 5 - compPhotos.length
+    if (files.length > remaining) {
+      alert(lang === 'es' ? `Solo puedes agregar ${remaining} foto(s) más` : `You can only add ${remaining} more photo(s)`)
+    }
+    const toAdd = files.slice(0, remaining)
+    toAdd.forEach(file => {
+      const url = URL.createObjectURL(file)
+      setCompPhotos(prev => prev.length < 5 ? [...prev, { file, preview: url }] : prev)
+    })
+    // Keep first photo for legacy compPreview
+    if (toAdd.length > 0 && compPhotos.length === 0) {
+      setCompPhoto(toAdd[0])
+      const reader = new FileReader()
+      reader.onload = ev => setCompPreview(ev.target.result)
+      reader.readAsDataURL(toAdd[0])
+    }
   }
 
   async function handleComplete() {
-    if (!compPreview) { alert(t('taskDetail.proofRequired', lang)); return }
+    if (compPhotos.length === 0 && !compPreview) { alert(t('taskDetail.proofRequired', lang)); return }
     setCompleting(true)
     try {
-      const uploadBlob = annotatedBlob || compPhoto
+      const photos = compPhotos.length > 0 ? compPhotos : [{ file: annotatedBlob || compPhoto, preview: compPreview }]
+      
+      // Upload first photo as completion_photo_url
       const path = `completions/${task.id}/${Date.now()}.jpg`
-      await supabase.storage.from('fieldsnap-uploads').upload(path, uploadBlob, { contentType:'image/jpeg' })
+      await supabase.storage.from('fieldsnap-uploads').upload(path, photos[0].file, { contentType:'image/jpeg' })
       const { data: urlData } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
       await supabase.from('tasks').update({ status:'completed', completed_by: profile.id, completed_at: new Date().toISOString(), completion_photo_url: urlData.publicUrl }).eq('id', task.id)
+
+      // Upload additional photos to task_photos
+      for (let i = 1; i < photos.length; i++) {
+        const p = `completions/${task.id}/${Date.now()}_${i}.jpg`
+        const { error } = await supabase.storage.from('fieldsnap-uploads').upload(p, photos[i].file, { contentType:'image/jpeg' })
+        if (!error) {
+          const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(p)
+          await supabase.from('task_photos').insert({ task_id: task.id, photo_url: data.publicUrl, type: 'after' })
+        }
+      }
       onRefresh(); onClose()
     } catch (err) { alert(err.message) }
     setCompleting(false)
@@ -305,23 +334,48 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               ) : (
                 <div className="space-y-3 bg-green-50 rounded-2xl p-4">
                   <p className="font-semibold text-green-800 text-sm">{t('taskDetail.proofPhoto', lang)}</p>
-                  {compPreview ? (
-                    <div>
-                      <img src={compPreview} className="w-full h-36 object-cover rounded-xl mb-2" alt="" />
-                      <div className="flex gap-2">
-                        <button onClick={() => setShowAnnotate(true)} className="flex-1 btn-secondary text-sm py-2">✏️ {t('createTask.annotate', lang)}</button>
-                        <button onClick={() => { setCompPhoto(null); setCompPreview(null) }} className="flex-1 btn-secondary text-sm py-2 text-red-500">{t('createTask.removePhoto', lang)}</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <button onClick={() => { fileInput.current.setAttribute('capture','environment'); fileInput.current.click() }}
-                        className="flex-1 h-16 border-2 border-dashed border-green-400 rounded-xl text-green-700 text-sm active:scale-95">📷 {t('createTask.camera', lang)}</button>
-                      <button onClick={() => { fileInput.current.removeAttribute('capture'); fileInput.current.click() }}
-                        className="flex-1 h-16 border-2 border-dashed border-green-300 rounded-xl text-green-600 text-sm active:scale-95">🖼️ {t('createTask.gallery', lang)}</button>
+                  <p className="text-xs text-gray-500 mb-1">{lang === 'es' ? `Fotos (${compPhotos.length}/5)` : `Photos (${compPhotos.length}/5)`}</p>
+                  {compPhotos.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+                      {compPhotos.map((p, i) => (
+                        <div key={i} className="relative flex-shrink-0">
+                          <img src={p.preview} className="h-24 w-24 object-cover rounded-xl" alt="comp" />
+                          <div className="absolute top-1 left-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">{i+1}</div>
+                          <button onClick={() => setCompPhotos(prev => prev.filter((_,idx) => idx !== i))}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+                  {compPhotos.length < 5 && (
+                    <button onClick={() => setShowCompPhotoChoice(true)}
+                      className="w-full h-14 border-2 border-dashed border-green-400 rounded-xl text-green-700 text-sm active:scale-95 mb-2">
+                      📷 {lang === 'es' ? 'Agregar foto' : 'Add Photo'}
+                    </button>
+                  )}
+                  <input ref={compCameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+                  <input ref={compGalleryInput} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />
+                  {showCompPhotoChoice && (
+                    <div className="fixed inset-0 z-50 flex items-end" style={{background:'rgba(0,0,0,0.5)'}} onClick={() => setShowCompPhotoChoice(false)}>
+                      <div className="w-full bg-white rounded-t-3xl p-6 space-y-3" onClick={e => e.stopPropagation()}>
+                        <p className="text-center font-semibold text-gray-700 mb-2">{lang === 'es' ? 'Agregar foto' : 'Add Photo'}</p>
+                        <button onClick={() => { setShowCompPhotoChoice(false); compCameraInput.current?.click() }}
+                          className="w-full btn-primary flex items-center justify-center gap-2">
+                          <span>📷</span> {lang === 'es' ? 'Tomar foto' : 'Take Photo'}
+                        </button>
+                        <button onClick={() => {
+                          setShowCompPhotoChoice(false)
+                          const remaining = 5 - compPhotos.length
+                          alert(lang === 'es' ? `Puedes seleccionar hasta ${remaining} foto(s) más (máximo 5)` : `You can select up to ${remaining} more photo(s) (5 max)`)
+                          compGalleryInput.current?.click()
+                        }} className="w-full btn-secondary flex items-center justify-center gap-2">
+                          <span>🖼️</span> {lang === 'es' ? 'Elegir de galería' : 'Choose from Gallery'}
+                        </button>
+                        <button onClick={() => setShowCompPhotoChoice(false)}
+                          className="w-full text-gray-400 text-sm py-2">{lang === 'es' ? 'Cancelar' : 'Cancel'}</button>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <button onClick={() => setShowComplete(false)} className="flex-1 btn-secondary text-sm">{t('taskDetail.cancel', lang)}</button>
                     <button onClick={handleComplete} className="flex-1 btn-primary text-sm" disabled={completing||!compPreview}>

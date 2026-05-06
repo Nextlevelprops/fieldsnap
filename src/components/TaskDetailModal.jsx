@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
-import { getBilingualText } from '../lib/translate'
+import { getBilingualText, getTextPairForLang } from '../lib/translate'
 import { t, formatDateTime, formatShortDate } from '../lib/i18n'
 import AnnotationCanvas from './AnnotationCanvas'
 
@@ -210,8 +210,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             <h3 className="font-semibold text-gray-700 text-sm mb-3">{t('taskDetail.comments', lang)}</h3>
             <div className="space-y-3 mb-3">
               {comments.map(c => {
-                const body = lang==='es' ? (c.body_es||c.body_en) : (c.body_en||c.body_es)
-                const bodyOther = lang==='es' ? c.body_en : c.body_es
+                const { primary: body, secondary: bodyOther } = getTextPairForLang(c.body_en, c.body_es, lang)
                 return (
                   <div key={c.id} className="flex gap-2">
                     {c.author?.photo_url

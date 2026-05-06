@@ -19,8 +19,24 @@ function PhotoRequiredScreen() {
     if (!file) return
     setSaving(true)
     try {
+      // Convert to JPEG via canvas for Android/HEIC compatibility
+      const blob = await new Promise((resolve) => {
+        const url = URL.createObjectURL(file)
+        const img = new Image()
+        img.onload = () => {
+          const MAX = 1200
+          let w = img.naturalWidth, h = img.naturalHeight
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          canvas.toBlob(b => { URL.revokeObjectURL(url); resolve(b) }, 'image/jpeg', 0.85)
+        }
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
+        img.src = url
+      })
       const path = `profiles/${profile.id}/avatar_${Date.now()}.jpg`
-      const { error: uploadErr } = await supabase.storage.from('fieldsnap-uploads').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true })
+      const { error: uploadErr } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
       if (uploadErr) { alert('Upload error: ' + uploadErr.message); setSaving(false); return }
       const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
       const { error: updateErr } = await supabase.from('profiles').update({ photo_url: data.publicUrl }).eq('id', profile.id)

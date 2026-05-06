@@ -63,6 +63,7 @@ export default function App() {
   const { session, profile, setProfile } = useApp()
   const [page, setPage]             = useState('dashboard')
   const [activeProperty, setActiveProperty] = useState(null)
+  const [notifTaskId, setNotifTaskId] = useState(null)
 
   // Still loading auth state
   if (session === undefined || (session && profile === undefined)) {
@@ -84,6 +85,16 @@ export default function App() {
     return <SettingsPage onBack={() => setPage('dashboard')} />
   }
 
+  if (page === 'notifications') {
+    return <NotificationsPage
+      onBack={() => setPage('dashboard')}
+      onOpenTask={(taskId) => {
+        setNotifTaskId(taskId)
+        setPage('dashboard')
+      }}
+    />
+  }
+
   if (page === 'property' && activeProperty) {
     return (
       <PropertyPage
@@ -97,7 +108,7 @@ export default function App() {
   return (
     <Dashboard
       onOpenProperty={p => { setActiveProperty(p); setPage('property') }}
-      onOpenSettings={() => setPage('settings')}
+      onOpenSettings={() => setPage('settings')} onOpenNotifications={() => setPage('notifications')}
     />
   )
 }

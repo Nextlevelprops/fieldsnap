@@ -6,7 +6,7 @@ import PropertyCard from '../components/PropertyCard'
 import AddPropertyModal from '../components/AddPropertyModal'
 import NotificationBell from '../components/NotificationBell'
 
-export default function Dashboard({ onOpenProperty, onOpenSettings }) {
+export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifications }) {
   const { profile, lang } = useApp()
   const [tab, setTab]               = useState('active')
   const [properties, setProperties] = useState([])
@@ -39,7 +39,7 @@ export default function Dashboard({ onOpenProperty, onOpenSettings }) {
         <div className="flex items-center justify-between px-4 py-2">
           <img src="/logo.png" alt="FieldSnap" className="h-12 object-contain" />
           <div className="flex items-center gap-3">
-            <NotificationBell />
+            <NotificationBell onOpen={() => onOpenNotifications()} />
             <button onClick={onOpenSettings} className="active:scale-95">
               {profile?.photo_url
                 ? <img src={profile.photo_url} className="w-10 h-10 rounded-full object-cover border-2 border-brand-400" alt="profile" />

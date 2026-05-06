@@ -18,6 +18,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const [showAnnotate, setShowAnnotate] = useState(false)
   const [annotatedBlob, setAnnotatedBlob] = useState(null)
   const [showCompPhotoChoice, setShowCompPhotoChoice] = useState(false)
+  const [showCompPhotoWarning, setShowCompPhotoWarning] = useState(false)
   const compCameraInput = useRef(null)
   const compGalleryInput = useRef(null)
   const [saving, setSaving]     = useState(false)
@@ -365,14 +366,33 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                         </button>
                         <button onClick={() => {
                           setShowCompPhotoChoice(false)
-                          const remaining = 5 - compPhotos.length
-                          alert(lang === 'es' ? `Puedes seleccionar hasta ${remaining} foto(s) más (máximo 5)` : `You can select up to ${remaining} more photo(s) (5 max)`)
-                          compGalleryInput.current?.click()
+                          setShowCompPhotoChoice(false)
+                          const skip = localStorage.getItem('skipPhotoWarning')
+                          if (skip) { compGalleryInput.current?.click(); return }
+                          setShowCompPhotoWarning(true)
                         }} className="w-full btn-secondary flex items-center justify-center gap-2">
                           <span>🖼️</span> {lang === 'es' ? 'Elegir de galería' : 'Choose from Gallery'}
                         </button>
                         <button onClick={() => setShowCompPhotoChoice(false)}
                           className="w-full text-gray-400 text-sm py-2">{lang === 'es' ? 'Cancelar' : 'Cancel'}</button>
+                      </div>
+                    </div>
+                  )}
+                  {showCompPhotoWarning && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{background:'rgba(0,0,0,0.5)'}}>
+                      <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                        <p className="font-semibold text-gray-800 mb-2">{lang === 'es' ? 'Límite de fotos' : 'Photo Limit'}</p>
+                        <p className="text-gray-600 text-sm mb-5">
+                          {lang === 'es'
+                            ? `Puedes seleccionar hasta ${5 - compPhotos.length} foto(s) más (máximo 5 en total).`
+                            : `You can select up to ${5 - compPhotos.length} more photo(s) (5 max total).`}
+                        </p>
+                        <button onClick={() => { setShowCompPhotoWarning(false); compGalleryInput.current?.click() }}
+                          className="w-full btn-primary mb-2">Okay</button>
+                        <button onClick={() => { localStorage.setItem('skipPhotoWarning','1'); setShowCompPhotoWarning(false); compGalleryInput.current?.click() }}
+                          className="w-full text-gray-400 text-sm py-2">
+                          {lang === 'es' ? 'No mostrar de nuevo' : 'Do not show again'}
+                        </button>
                       </div>
                     </div>
                   )}

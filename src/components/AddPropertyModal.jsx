@@ -58,20 +58,34 @@ export default function AddPropertyModal({ onClose, onCreated }) {
     searchTimer.current = setTimeout(() => searchAddress(val), 400)
   }
 
+  function abbreviateDirection(str) {
+    return str
+      .replace(/\bNorth\b/g, 'N').replace(/\bSouth\b/g, 'S')
+      .replace(/\bEast\b/g, 'E').replace(/\bWest\b/g, 'W')
+      .replace(/\bNortheast\b/g, 'NE').replace(/\bNorthwest\b/g, 'NW')
+      .replace(/\bSoutheast\b/g, 'SE').replace(/\bSouthwest\b/g, 'SW')
+      .replace(/\bStreet\b/g, 'St').replace(/\bAvenue\b/g, 'Ave')
+      .replace(/\bBoulevard\b/g, 'Blvd').replace(/\bDrive\b/g, 'Dr')
+      .replace(/\bLane\b/g, 'Ln').replace(/\bRoad\b/g, 'Rd')
+      .replace(/\bCourt\b/g, 'Ct').replace(/\bPlace\b/g, 'Pl')
+  }
+
   function selectSuggestion(s) {
     const addr = s.address
     const houseNumber = addr.house_number || ''
-    const road = addr.road || addr.pedestrian || ''
+    const road = abbreviateDirection(addr.road || addr.pedestrian || '')
     const newStreet = `${houseNumber} ${road}`.trim()
+    const newCity = addr.city || addr.town || addr.village || addr.county || ''
+    const newState = addr.state_code || (addr.state || '').substring(0, 2).toUpperCase()
+    const newZip = addr.postcode || ''
     setStreet(newStreet)
-    setCity(addr.city || addr.town || addr.village || addr.county || '')
-    setState(addr.state_code || addr.state || '')
-    setZip(addr.postcode || '')
+    setCity(newCity)
+    setState(newState.toUpperCase())
+    setZip(newZip)
     setLat(parseFloat(s.lat))
     setLng(parseFloat(s.lon))
     setSearchText(newStreet)
     setSuggestions([])
-    // Auto-set name from street if name is empty or was auto-set
     setName(prev => (!prev || prev === street) ? newStreet : prev)
   }
 
@@ -125,12 +139,21 @@ export default function AddPropertyModal({ onClose, onCreated }) {
             value={searchText} onChange={handleSearchChange} />
           {suggestions.length > 0 && (
             <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
-              {suggestions.map((s, i) => (
-                <button key={i} onClick={() => selectSuggestion(s)}
-                  className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0">
-                  {s.display_name}
-                </button>
-              ))}
+              {suggestions.map((s, i) => {
+                const a = s.address
+                const hn = a.house_number || ''
+                const rd = a.road || a.pedestrian || ''
+                const city = a.city || a.town || a.village || ''
+                const st = a.state_code || (a.state||'').substring(0,2).toUpperCase()
+                const zip = a.postcode || ''
+                const label = `${hn} ${rd}`.trim() + (city ? `, ${city}` : '') + (st ? `, ${st}` : '') + (zip ? ` ${zip}` : '')
+                return (
+                  <button key={i} onClick={() => selectSuggestion(s)}
+                    className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50 last:border-0">
+                    {label}
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>

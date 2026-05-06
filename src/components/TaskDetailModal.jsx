@@ -284,30 +284,28 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             )}
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs text-gray-400">{t('taskDetail.dueDate', lang)}</p>
-              <div className="flex items-center justify-between mt-1">
-                {editingDueDate ? (
-                  <input type="date" value={dueDateValue}
-                    onChange={async e => {
-                      setDueDateValue(e.target.value)
-                      await supabase.from('tasks').update({ due_date: e.target.value || null }).eq('id', task.id)
-                      setEditingDueDate(false)
-                      onRefresh()
-                    }}
-                    onBlur={() => setEditingDueDate(false)}
-                    autoFocus
-                    className="input text-sm py-1 flex-1" />
+              <div className="flex items-center gap-2 mt-1">
+                {isOwner && !isCompleted ? (
+                  <>
+                    <input type="date" value={dueDateValue}
+                      onChange={async e => {
+                        setDueDateValue(e.target.value)
+                        await supabase.from('tasks').update({ due_date: e.target.value || null }).eq('id', task.id)
+                        onRefresh()
+                      }}
+                      className="input text-sm py-1 flex-1" />
+                    {dueDateValue && (
+                      <button onClick={async () => {
+                        await supabase.from('tasks').update({ due_date: null }).eq('id', task.id)
+                        setDueDateValue('')
+                        onRefresh()
+                      }} className="text-red-400 font-bold text-lg leading-none">✕</button>
+                    )}
+                  </>
                 ) : (
-                  <p className="font-semibold text-gray-700 cursor-pointer"
-                    onClick={() => isOwner && !isCompleted && setEditingDueDate(true)}>
-                    {task.due_date ? formatShortDate(task.due_date, lang) : (lang === 'es' ? 'Sin fecha — toca para agregar' : 'No date — tap to add')}
+                  <p className="font-semibold text-gray-700">
+                    {task.due_date ? formatShortDate(task.due_date, lang) : (lang === 'es' ? 'Sin fecha' : 'No date')}
                   </p>
-                )}
-                {isOwner && !isCompleted && task.due_date && !editingDueDate && (
-                  <button onClick={async () => {
-                    await supabase.from('tasks').update({ due_date: null }).eq('id', task.id)
-                    setDueDateValue('')
-                    onRefresh()
-                  }} className="text-xs text-red-400 font-semibold ml-2">✕</button>
                 )}
               </div>
             </div>

@@ -7,7 +7,6 @@ import AvatarCropModal from './components/AvatarCropModal'
 import { useState, useRef } from 'react'
 import NotificationsPage from './pages/NotificationsPage'
 import WorkLogPage from './pages/WorkLogPage'
-import WorkLogPage from './pages/WorkLogPage'
 import { supabase } from './lib/supabase'
 
 function PhotoRequiredScreen() {
@@ -86,10 +85,6 @@ export default function App() {
 
   if (page === 'settings') {
     return <SettingsPage onBack={() => setPage('dashboard')} onOpenWorkLog={() => setPage('worklog')} />
-  }
-
-  if (page === 'worklog') {
-    return <WorkLogPage onBack={() => setPage('settings')} />
   }
 
   if (page === 'worklog') {

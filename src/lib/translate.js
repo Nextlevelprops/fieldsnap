@@ -4,7 +4,7 @@
 // 2) LibreTranslate when available
 // 3) never leave the opposite-language field blank
 
-const ES_WORDS = /\b(el|la|los|las|un|una|que|de|en|es|por|con|del|al|se|su|hay|para|como|esto|esta|este|pero|más|muy|así|si|no|sí|yo|tú|él|ella|arreglar|necesitamos|foto|captura|pantalla|tarea|comentario)\b/i
+const ES_WORDS = /\b(el|la|los|las|un|una|que|de|en|es|por|con|del|al|se|su|hay|para|como|esto|esta|este|pero|más|muy|así|si|no|sí|yo|tú|él|ella|arreglar|necesitamos|foto|captura|pantalla|tarea|comentario|favor|llama|llame|dime|avisa|avisame|nombre|número|teléfono|tiene|malo|revestimiento|podemos|editar|añadir|algunas|flores|signed|firmó|quitar|cinta|casa|limpiar|espejo|pared|techo|piso|baño|cocina|cuarto|puerta|ventana|pintar|reparar|necesita|necesito|hola|gracias|buenos|buenas|días|tardes|noches|qué|cómo|cuándo|dónde|quién|cuál)\b/i
 
 export function detectLanguage(text = '') {
   const clean = String(text || '').trim()

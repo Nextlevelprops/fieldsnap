@@ -79,9 +79,22 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   }
 
   async function loadContractors() {
-    const { data } = await supabase.from('property_contractors')
+    // Load contractors on this property
+    const { data: contractorData } = await supabase.from('property_contractors')
       .select('contractor_id, profiles(id,name)').eq('property_id', propertyId)
-    setContractors((data||[]).map(r=>r.profiles).filter(Boolean))
+    const contractorProfiles = (contractorData||[]).map(r=>r.profiles).filter(Boolean)
+
+    // Also load the property owner
+    const { data: propData } = await supabase.from('properties')
+      .select('owner_id, profiles!properties_owner_id_fkey(id,name)').eq('id', propertyId).single()
+    const ownerProfile = propData?.profiles
+
+    // Combine and deduplicate, exclude current user
+    const all = [...contractorProfiles]
+    if (ownerProfile && !all.find(p => p.id === ownerProfile.id)) {
+      all.push(ownerProfile)
+    }
+    setContractors(all.filter(p => p.id !== profile.id))
   }
 
   function handleCommentChange(e) {

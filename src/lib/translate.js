@@ -169,10 +169,12 @@ export async function getBilingualText(text) {
   const detected = detectLanguage(clean)
   if (detected === 'es') {
     const en = await translateText(clean, 'es', 'en')
-    return { en: en || clean, es: clean }
+    const enFinal = (en && en.toLowerCase() !== clean.toLowerCase()) ? en : localTranslate(clean, 'es', 'en') || clean
+    return { en: enFinal, es: clean }
   }
   const es = await translateText(clean, 'en', 'es')
-  return { en: clean, es: es || clean }
+  const esFinal = (es && es.toLowerCase() !== clean.toLowerCase()) ? es : localTranslate(clean, 'en', 'es') || clean
+  return { en: clean, es: esFinal }
 }
 
 export function displayTextForLang(en, es, lang) {

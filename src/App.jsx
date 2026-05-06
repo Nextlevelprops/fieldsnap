@@ -71,7 +71,7 @@ function PhotoRequiredScreen() {
             ? (profile?.language === 'es' ? 'Guardando...' : 'Saving...')
             : (profile?.language === 'es' ? 'Agregar foto de perfil' : 'Add Profile Photo')}
         </button>
-        <input ref={photoInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+        <input ref={photoInput} type="file" accept="image/*,.heic,.heif" capture="environment" className="hidden" onChange={handlePhotoSelect} />
       </div>
     </div>
   )

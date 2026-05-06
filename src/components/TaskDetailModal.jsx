@@ -18,20 +18,47 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const [annotatedBlob, setAnnotatedBlob] = useState(null)
   const [saving, setSaving]     = useState(false)
   const [completing, setCompleting] = useState(false)
+  const [beforePhotos, setBeforePhotos] = useState([])
+  const [afterPhotos, setAfterPhotos]   = useState([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const commentInput = useRef(null)
   const fileInput    = useRef(null)
+  const beforeInput  = useRef(null)
+  const afterInput   = useRef(null)
 
   const isCompleted = task.status === 'completed'
   const title     = lang==='es' ? (task.title_es||task.title_en) : (task.title_en||task.title_es)
   const titleOther = lang==='es' ? task.title_en : task.title_es
 
   useEffect(() => {
-    loadComments(); loadContractors()
+    loadComments(); loadContractors(); loadTaskPhotos()
     const ch = supabase.channel(`task-${task.id}`)
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'comments', filter:`task_id=eq.${task.id}` }, () => loadComments())
       .subscribe()
     return () => supabase.removeChannel(ch)
   }, [task.id])
+
+  async function loadTaskPhotos() {
+    const { data } = await supabase.from('task_photos').select('*').eq('task_id', task.id).order('created_at', { ascending: true })
+    setBeforePhotos((data||[]).filter(p => p.type === 'before'))
+    setAfterPhotos((data||[]).filter(p => p.type === 'after'))
+  }
+
+  async function handleAddPhoto(e, type) {
+    const file = e.target.files?.[0]; if (!file) return
+    const current = type === 'before' ? beforePhotos : afterPhotos
+    if (current.length >= 5) { alert(lang === 'es' ? 'Máximo 5 fotos' : 'Maximum 5 photos'); return }
+    setUploadingPhoto(true)
+    try {
+      const path = `tasks/${task.id}/${type}_${Date.now()}.jpg`
+      const { error } = await supabase.storage.from('fieldsnap-uploads').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true })
+      if (error) throw error
+      const { data: urlData } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
+      await supabase.from('task_photos').insert({ task_id: task.id, photo_url: urlData.publicUrl, type })
+      loadTaskPhotos()
+    } catch(err) { alert(err.message) }
+    setUploadingPhoto(false)
+  }
 
   async function loadComments() {
     const { data } = await supabase.from('comments')
@@ -130,8 +157,38 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             </div>
           )}
 
-          {/* Task photo */}
-          {task.photo_url && <img src={task.photo_url} className="w-full rounded-2xl mb-4 max-h-56 object-cover" alt="task" />}
+          {/* Before photos */}
+          {(task.photo_url || beforePhotos.length > 0) && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Antes' : 'Before Photos'} ({beforePhotos.length > 0 ? beforePhotos.length : 1}/5)</p>
+                {!isCompleted && (beforePhotos.length < 5) && (
+                  <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
+                    className="text-xs text-brand-600 font-semibold">
+                    + {lang === 'es' ? 'Agregar' : 'Add'}
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {task.photo_url && beforePhotos.length === 0 && (
+                  <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="before" />
+                )}
+                {beforePhotos.map(p => (
+                  <img key={p.id} src={p.photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="before" />
+                ))}
+              </div>
+              <input ref={beforeInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
+            </div>
+          )}
+          {!isCompleted && beforePhotos.length === 0 && !task.photo_url && (
+            <div className="mb-4">
+              <button onClick={() => beforeInput.current?.click()} disabled={uploadingPhoto}
+                className="w-full h-20 border-2 border-dashed border-brand-300 rounded-xl flex items-center justify-center text-brand-600 text-sm font-medium">
+                📷 {lang === 'es' ? 'Agregar foto antes' : 'Add before photo'}
+              </button>
+              <input ref={beforeInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
+            </div>
+          )}
 
           {/* Meta grid */}
           <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
@@ -161,11 +218,27 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             )}
           </div>
 
-          {/* Completion photo */}
-          {task.completion_photo_url && (
+          {/* After photos */}
+          {(task.completion_photo_url || afterPhotos.length > 0) && (
             <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-400 mb-1">{t('taskDetail.completionPhoto', lang)}</p>
-              <img src={task.completion_photo_url} className="w-full rounded-2xl max-h-48 object-cover" alt="completion" />
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Después' : 'After Photos'} ({afterPhotos.length > 0 ? afterPhotos.length : 1}/5)</p>
+                {isCompleted && afterPhotos.length < 5 && (
+                  <button onClick={() => afterInput.current?.click()} disabled={uploadingPhoto}
+                    className="text-xs text-brand-600 font-semibold">
+                    + {lang === 'es' ? 'Agregar' : 'Add'}
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {task.completion_photo_url && afterPhotos.length === 0 && (
+                  <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="after" />
+                )}
+                {afterPhotos.map(p => (
+                  <img key={p.id} src={p.photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="after" />
+                ))}
+              </div>
+              <input ref={afterInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'after')} />
             </div>
           )}
 

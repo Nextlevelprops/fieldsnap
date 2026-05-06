@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { t } from '../lib/i18n'
 
@@ -11,6 +11,21 @@ function formatPhone(raw) {
 
 export default function AuthPage() {
   const [lang, setLang]         = useState(null)
+  const [inviteToken, setInviteToken] = useState(null)
+  const [inviteOwnerId, setInviteOwnerId] = useState(null)
+
+  useEffect(() => {
+    const path = window.location.pathname
+    const match = path.match(/\/invite\/([a-zA-Z0-9-]+)/)
+    if (match) {
+      const token = match[1]
+      setInviteToken(token)
+      // look up owner from token
+      supabase.from('invite_tokens').select('owner_id').eq('token', token).maybeSingle().then(({ data }) => {
+        if (data) setInviteOwnerId(data.owner_id)
+      })
+    }
+  }, [])
   const [mode, setMode]         = useState('signin')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
@@ -52,14 +67,25 @@ export default function AuthPage() {
       const { data, error: authErr } = await supabase.auth.signUp({ email, password })
       if (authErr) throw authErr
       const userId = data.user.id
+      const role = inviteToken ? 'contractor' : 'owner'
       await supabase.from('profiles').insert({
         id: userId,
         name: fullName,
         phone,
         email,
         language: lang,
-        role: 'contractor'
+        role
       })
+      // if invited, link to owner's properties
+      if (inviteToken && inviteOwnerId) {
+        // get all owner properties and link contractor
+        const { data: props } = await supabase.from('properties').select('id').eq('owner_id', inviteOwnerId)
+        if (props && props.length > 0) {
+          await supabase.from('property_contractors').insert(
+            props.map(p => ({ property_id: p.id, contractor_id: userId }))
+          )
+        }
+      }
     } catch (err) { setError(err.message) }
     setLoading(false)
   }

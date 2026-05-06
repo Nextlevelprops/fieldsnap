@@ -24,6 +24,23 @@ export default function SettingsPage({ onBack }) {
   const [contractors, setContractors] = useState([])
   const [inviteInput, setInviteInput] = useState('')
   const [inviting, setInviting]       = useState(false)
+  const [inviteLink, setInviteLink]   = useState('')
+
+  useEffect(() => {
+    if (profile?.id) generateInviteLink()
+  }, [profile])
+
+  async function generateInviteLink() {
+    // check if token exists
+    const { data } = await supabase.from('invite_tokens').select('token').eq('owner_id', profile.id).maybeSingle()
+    if (data) {
+      setInviteLink(`${window.location.origin}/invite/${data.token}`)
+    } else {
+      // create one
+      const { data: created } = await supabase.from('invite_tokens').insert({ owner_id: profile.id }).select('token').single()
+      if (created) setInviteLink(`${window.location.origin}/invite/${created.token}`)
+    }
+  }
   const [selectedContractor, setSelectedContractor] = useState(null)
   const [showWorkLog, setShowWorkLog] = useState(false)
 

@@ -46,7 +46,7 @@ export default function PropertySettingsModal({ property, lang, onClose, onUpdat
   async function searchAddress(text) {
     if (!text || text.length < 4) { setSuggestions([]); return }
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=5&countrycodes=us`)
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=5&countrycodes=us&viewbox=-94.95,39.62,-94.65,39.85&bounded=0`)
       const data = await res.json()
       setSuggestions(data)
     } catch { setSuggestions([]) }

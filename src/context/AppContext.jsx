@@ -38,12 +38,21 @@ export function AppProvider({ children }) {
       return
     }
 
-    // If the user confirmed their email before a profile row was created,
-    // create the missing profile from the signup metadata so the dashboard does not spin forever.
+    // Profile not found yet — may still be inserting after email confirmation.
+    // Wait briefly and retry once before creating a fallback.
+    await new Promise(r => setTimeout(r, 1500))
+    const { data: retry } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle()
+    if (retry) {
+      setProfile(retry)
+      setLang(retry.language || 'en')
+      return
+    }
+
+    // Still not found — create minimal fallback (name will be updated by signup flow)
     const meta = user?.user_metadata || {}
     const fallbackProfile = {
       id: userId,
-      name: meta.name || user?.email?.split('@')?.[0] || 'User',
+      name: meta.full_name || meta.name || 'User',
       phone: meta.phone || null,
       email: user?.email || null,
       photo_url: null,
@@ -53,7 +62,7 @@ export function AppProvider({ children }) {
 
     const { data: created, error: createErr } = await supabase
       .from('profiles')
-      .upsert(fallbackProfile, { onConflict: 'id', ignoreDuplicates: true })
+      .insert(fallbackProfile)
       .select('*')
       .single()
 

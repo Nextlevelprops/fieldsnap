@@ -10,22 +10,14 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   const { profile } = useApp()
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate]   = useState('')
-  const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photos, setPhotos] = useState([]) // [{file, preview}]
   const [showAnnotate, setShowAnnotate] = useState(false)
-  const [annotatedBlob, setAnnotatedBlob] = useState(null)
+  const [annotateIndex, setAnnotateIndex] = useState(null)
   const [saving, setSaving]     = useState(false)
   const cameraInput = useRef(null)
   const galleryInput = useRef(null)
 
-  function handlePhotoSelect(e) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    setPhotoFile(file)
-    setAnnotatedBlob(null)
-
-    // Convert to JPEG via canvas so HEIC and other formats work
+  function processFile(file, callback) {
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
@@ -36,22 +28,33 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
       canvas.width = w; canvas.height = h
       canvas.getContext('2d').drawImage(img, 0, 0, w, h)
       canvas.toBlob(blob => {
-        if (blob) {
-          setPhotoFile(blob)
-          setPhotoPreview(URL.createObjectURL(blob))
-        }
+        if (blob) callback(blob, URL.createObjectURL(blob))
         URL.revokeObjectURL(url)
       }, 'image/jpeg', 0.85)
     }
-    img.onerror = () => {
-      // Fallback — show directly
-      setPhotoPreview(url)
-    }
+    img.onerror = () => callback(file, url)
     img.src = url
   }
 
+  function handlePhotoSelect(e) {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (!files.length) return
+    const remaining = 5 - photos.length
+    const toAdd = files.slice(0, remaining)
+    toAdd.forEach(file => {
+      processFile(file, (blob, preview) => {
+        setPhotos(prev => prev.length < 5 ? [...prev, { file: blob, preview }] : prev)
+      })
+    })
+  }
+
+  function removePhoto(index) {
+    setPhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
   async function handleSave() {
-    if (!description && !photoPreview) {
+    if (!description && photos.length === 0) {
       alert(t('createTask.needPhotoOrDesc', lang))
       return
     }
@@ -63,19 +66,19 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
         titleEn = bi.en; titleEs = bi.es
       }
 
+      // Upload first photo as main photo_url, rest go to task_photos
       let photoUrl = null
-      const uploadBlob = annotatedBlob || photoFile
-      if (uploadBlob) {
+      if (photos.length > 0) {
         const path = `tasks/${propertyId}/${Date.now()}.jpg`
         const { error: upErr } = await supabase.storage
           .from('fieldsnap-uploads')
-          .upload(path, uploadBlob, { contentType: 'image/jpeg', upsert: true })
+          .upload(path, photos[0].file, { contentType: 'image/jpeg', upsert: true })
         if (upErr) throw upErr
         const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
         photoUrl = data.publicUrl
       }
 
-      const { error } = await supabase.from('tasks').insert({
+      const { data: task, error } = await supabase.from('tasks').insert({
         property_id: propertyId,
         created_by: profile.id,
         title_en: titleEn,
@@ -83,8 +86,23 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
         photo_url: photoUrl,
         due_date: dueDate || null,
         status: 'open'
-      })
+      }).select().single()
       if (error) throw error
+
+      // Upload additional photos to task_photos
+      if (task && photos.length > 1) {
+        for (let i = 1; i < photos.length; i++) {
+          const path = `tasks/${task.id}/before_${Date.now()}_${i}.jpg`
+          const { error: upErr } = await supabase.storage
+            .from('fieldsnap-uploads')
+            .upload(path, photos[i].file, { contentType: 'image/jpeg', upsert: true })
+          if (!upErr) {
+            const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
+            await supabase.from('task_photos').insert({ task_id: task.id, photo_url: data.publicUrl, type: 'before' })
+          }
+        }
+      }
+
       onCreated()
     } catch (err) {
       alert(err.message)
@@ -92,51 +110,41 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
     setSaving(false)
   }
 
-  if (showAnnotate && photoPreview) {
-    return (
-      <AnnotationCanvas
-        imageUrl={photoPreview}
-        onDone={blob => { setAnnotatedBlob(blob); setPhotoPreview(URL.createObjectURL(blob)); setShowAnnotate(false) }}
-        onCancel={() => setShowAnnotate(false)}
-        lang={lang}
-      />
-    )
-  }
+
 
   return (
     <Modal onClose={onClose} title={t('createTask.title', lang)}>
       <div className="space-y-4">
         {/* Photo area */}
         <div>
-          {photoPreview ? (
-            <div>
-              <img src={photoPreview} className="w-full h-48 object-contain rounded-xl mb-2" alt="preview" />
-              <div className="flex gap-2">
-                <button onClick={() => setShowAnnotate(true)} className="flex-1 btn-secondary text-sm py-2">
-                  ✏️ {t('createTask.annotate', lang)}
-                </button>
-                <button onClick={() => { setPhotoFile(null); setPhotoPreview(null); setAnnotatedBlob(null) }}
-                  className="flex-1 btn-secondary text-sm py-2 text-red-500">
-                  {t('createTask.removePhoto', lang)}
-                </button>
-              </div>
+          <p className="text-xs font-semibold text-gray-500 mb-2">{lang === 'es' ? `Fotos Antes (${photos.length}/5)` : `Before Photos (${photos.length}/5)`}</p>
+          {photos.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-2 mb-2">
+              {photos.map((p, i) => (
+                <div key={i} className="relative flex-shrink-0">
+                  <img src={p.preview} className="h-24 w-24 object-cover rounded-xl" alt="preview" />
+                  <button onClick={() => removePhoto(i)}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
+                </div>
+              ))}
             </div>
-          ) : (
+          )}
+          {photos.length < 5 && (
             <div className="flex gap-2">
               <button onClick={() => cameraInput.current?.click()}
-                className="flex-1 h-20 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 text-brand-600 active:scale-95">
-                <span className="text-2xl">📷</span>
+                className="flex-1 h-16 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 text-brand-600 active:scale-95">
+                <span className="text-xl">📷</span>
                 <span className="text-xs font-medium">{t('createTask.camera', lang)}</span>
               </button>
               <button onClick={() => galleryInput.current?.click()}
-                className="flex-1 h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-500 active:scale-95">
-                <span className="text-2xl">🖼️</span>
+                className="flex-1 h-16 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1 text-gray-500 active:scale-95">
+                <span className="text-xl">🖼️</span>
                 <span className="text-xs font-medium">{t('createTask.gallery', lang)}</span>
               </button>
             </div>
           )}
           <input ref={cameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
-          <input ref={galleryInput} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+          <input ref={galleryInput} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />
         </div>
 
         <textarea

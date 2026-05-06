@@ -41,9 +41,9 @@ export default function TaskCard({ task, lang: langProp, onTap }) {
       </div>
 
       {/* Title */}
-      <p className="font-semibold text-gray-800 text-sm mb-3 line-clamp-2">
+      <div className="font-semibold text-gray-800 text-sm mb-3">
         {titlePrimary || t('task.noDescription', lang)}
-        {titleSecondary && titleSecondary !== titlePrimary && (
+        {titleSecondary {titleSecondary && titleSecondary !== titlePrimary && ({titleSecondary && titleSecondary !== titlePrimary && ( (
           <p className="text-xs text-gray-400 mt-0.5">{titleSecondary}</p>
         )}
       </p>

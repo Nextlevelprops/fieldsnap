@@ -178,7 +178,7 @@ export default function SettingsPage({ onBack }) {
 
   return (
     <div className="min-h-screen bg-gray-50 page-enter">
-      <div className="bg-brand-700 safe-top px-4 py-4 flex items-center gap-3">
+      <div className="bg-brand-700 px-4 py-3 flex items-center gap-3">
         <button onClick={onBack} className="text-white text-xl">←</button>
         <h1 className="text-xl font-bold text-white">{t('settings.title', lang)}</h1>
       </div>

@@ -8,6 +8,8 @@ import { useState, useRef } from 'react'
 import NotificationsPage from './pages/NotificationsPage'
 import WorkLogPage from './pages/WorkLogPage'
 import { supabase } from './lib/supabase'
+import { subscribeToPush } from './lib/push'
+import { useEffect } from 'react'
 
 function PhotoRequiredScreen() {
   const { profile, setProfile } = useApp()
@@ -88,6 +90,12 @@ function PhotoRequiredScreen() {
 
 export default function App() {
   const { session, profile, setProfile } = useApp()
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      subscribeToPush(session.user.id).catch(console.error);
+    }
+  }, [session?.user?.id]);
   const [page, setPage]             = useState('dashboard')
   const [activeProperty, setActiveProperty] = useState(null)
   const [notifTask, setNotifTask] = useState(null)

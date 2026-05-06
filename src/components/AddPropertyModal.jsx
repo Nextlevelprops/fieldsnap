@@ -85,7 +85,7 @@ export default function AddPropertyModal({ onClose, onCreated }) {
     setZip(newZip)
     setLat(parseFloat(s.lat))
     setLng(parseFloat(s.lon))
-    setSearchText(newStreet)
+    setSearchText('')
     setSuggestions([])
     setName(prev => (!prev || prev === street) ? newStreet : prev)
   }

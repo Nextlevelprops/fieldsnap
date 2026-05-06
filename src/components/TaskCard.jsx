@@ -1,3 +1,4 @@
+import { useApp } from '../context/AppContext'
 import { isPast, isToday, parseISO } from 'date-fns'
 import { t, formatShortDate } from '../lib/i18n'
 
@@ -8,7 +9,9 @@ function shortName(fullName) {
   return parts[0] + ' ' + parts[parts.length-1][0] + '.'
 }
 
-export default function TaskCard({ task, lang, onTap }) {
+export default function TaskCard({ task, lang: langProp, onTap }) {
+  const { lang: langCtx } = useApp ? useApp() : { lang: langProp }
+  const lang = langCtx || langProp
   const isOverdue   = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && task.status !== 'completed'
   const isDueToday  = task.due_date && isToday(parseISO(task.due_date))
   const title       = lang === 'es' ? (task.title_es || task.title_en) : (task.title_en || task.title_es)

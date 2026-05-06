@@ -53,7 +53,7 @@ export function AppProvider({ children }) {
 
     const { data: created, error: createErr } = await supabase
       .from('profiles')
-      .upsert(fallbackProfile, { onConflict: 'id' })
+      .upsert(fallbackProfile, { onConflict: 'id', ignoreDuplicates: true })
       .select('*')
       .single()
 

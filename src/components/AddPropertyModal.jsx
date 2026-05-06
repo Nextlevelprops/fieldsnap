@@ -128,9 +128,9 @@ export default function AddPropertyModal({ onClose, onCreated }) {
     <Modal onClose={onClose} title={t('property.new', lang)}>
       <div className="space-y-4">
         <input className="input" placeholder="Property name" value={name} onChange={e=>setName(e.target.value)} />
-        <div className="relative">
+        {!street && <div className="relative">
           <input className="input" placeholder={lang === 'es' ? 'Buscar dirección...' : 'Search address...'}
-            value={searchText} onChange={handleSearchChange} />
+            value={searchText} onChange={handleSearchChange} autoComplete="off" />
           {suggestions.length > 0 && (
             <div className="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-48 overflow-y-auto">
               {suggestions.map((s, i) => {
@@ -151,15 +151,23 @@ export default function AddPropertyModal({ onClose, onCreated }) {
               })}
             </div>
           )}
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <input className="input" placeholder={t('property.street', lang)} value={street} onChange={e=>setStreet(e.target.value)} />
-          <input className="input" placeholder={t('property.city', lang)} value={city} onChange={e=>setCity(e.target.value)} />
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <input className="input" placeholder={t('property.state', lang)} value={state} onChange={e=>setState(e.target.value.toUpperCase())} maxLength={2} />
-          <input className="input col-span-2" placeholder={t('property.zip', lang)} value={zip} onChange={e=>setZip(e.target.value)} />
-        </div>
+        </div>}
+        {street && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <input className="input" placeholder={t('property.street', lang)} value={street} onChange={e=>setStreet(e.target.value)} />
+              <input className="input" placeholder={t('property.city', lang)} value={city} onChange={e=>setCity(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <input className="input" placeholder={t('property.state', lang)} value={state} onChange={e=>setState(e.target.value.toUpperCase())} maxLength={2} />
+              <input className="input col-span-2" placeholder={t('property.zip', lang)} value={zip} onChange={e=>setZip(e.target.value)} />
+            </div>
+            <button onClick={() => { setStreet(''); setCity(''); setState(''); setZip(''); setSearchText('') }}
+              className="text-xs text-brand-600 font-medium">
+              {lang === 'es' ? '← Buscar otra dirección' : '← Search different address'}
+            </button>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Property photo <span className="text-gray-400">(optional)</span></label>

@@ -3,6 +3,7 @@ import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
 import PropertyPage from './pages/PropertyPage'
 import SettingsPage from './components/SettingsPage'
+import AvatarCropModal from './components/AvatarCropModal'
 import { useState, useRef } from 'react'
 import { supabase } from './lib/supabase'
 
@@ -57,6 +58,7 @@ function PhotoRequiredScreen() {
             : (profile?.language === 'es' ? 'Agregar foto de perfil' : 'Add Profile Photo')}
         </button>
         <input ref={photoInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+      {showCrop && <AvatarCropModal src={cropSrc} onDone={handleCropDone} onClose={() => setShowCrop(false)} />}
       </div>
 
     </div>

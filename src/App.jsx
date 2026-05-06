@@ -64,7 +64,7 @@ export default function App() {
   const { session, profile, setProfile } = useApp()
   const [page, setPage]             = useState('dashboard')
   const [activeProperty, setActiveProperty] = useState(null)
-  const [notifTaskId, setNotifTaskId] = useState(null)
+  const [notifTask, setNotifTask] = useState(null)
 
   // Still loading auth state
   if (session === undefined || (session && profile === undefined)) {
@@ -89,9 +89,16 @@ export default function App() {
   if (page === 'notifications') {
     return <NotificationsPage
       onBack={() => setPage('dashboard')}
-      onOpenTask={(taskId) => {
-        setNotifTaskId(taskId)
-        setPage('dashboard')
+      onOpenTask={async (task) => {
+        // Load the property for this task
+        const { data: prop } = await supabase.from('properties').select('*').eq('id', task.property_id).single()
+        if (prop) {
+          setActiveProperty(prop)
+          setNotifTask(task)
+          setPage('property')
+        } else {
+          setPage('dashboard')
+        }
       }}
     />
   }
@@ -100,8 +107,10 @@ export default function App() {
     return (
       <PropertyPage
         property={activeProperty}
-        onBack={() => { setPage('dashboard'); setActiveProperty(null) }}
+        onBack={() => { setPage('dashboard'); setActiveProperty(null); setNotifTask(null) }}
         onRefreshDashboard={() => {}}
+        initialTask={notifTask}
+        onTaskOpened={() => setNotifTask(null)}
       />
     )
   }

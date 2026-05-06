@@ -10,14 +10,14 @@ import TaskDetailModal from '../components/TaskDetailModal'
 
 const tabMemory = {}
 
-export default function PropertyPage({ property, onBack, onRefreshDashboard }) {
+export default function PropertyPage({ property, onBack, onRefreshDashboard, initialTask, onTaskOpened }) {
   const { profile, lang } = useApp()
   const [tab, setTab]         = useState(tabMemory[property.id] || 'today')
   const [tasks, setTasks]     = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate]     = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [selectedTask, setSelectedTask] = useState(null)
+  const [selectedTask, setSelectedTask] = useState(initialTask || null)
   const isOwner = profile?.role === 'owner'
 
   function changeTab(t) { tabMemory[property.id] = t; setTab(t) }

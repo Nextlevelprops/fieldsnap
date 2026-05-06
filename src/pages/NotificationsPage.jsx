@@ -7,8 +7,14 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
 
   async function handleClick(n) {
     if (!n.read) await markNotificationRead(n.id)
-    if (n.task_id && onOpenTask) onOpenTask(n.task_id)
-    else onBack()
+    if (n.task_id && onOpenTask) {
+      // Look up the full task with its property
+      const { data: task } = await supabase.from('tasks')
+        .select('*, creator:profiles!tasks_created_by_fkey(name,photo_url), completer:profiles!tasks_completed_by_fkey(name,photo_url)')
+        .eq('id', n.task_id).single()
+      if (task) onOpenTask(task)
+      else onBack()
+    } else onBack()
   }
 
   async function markAllRead() {

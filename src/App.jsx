@@ -68,7 +68,7 @@ function PhotoRequiredScreen() {
 }
 
 export default function App() {
-  const { session, profile } = useApp()
+  const { session, profile, setProfile } = useApp()
   const [page, setPage]             = useState('dashboard')
   const [activeProperty, setActiveProperty] = useState(null)
 

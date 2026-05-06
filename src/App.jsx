@@ -3,15 +3,12 @@ import AuthPage from './pages/AuthPage'
 import Dashboard from './pages/Dashboard'
 import PropertyPage from './pages/PropertyPage'
 import SettingsPage from './components/SettingsPage'
-import AvatarCropModal from './components/AvatarCropModal'
 import { useState, useRef } from 'react'
 import { supabase } from './lib/supabase'
 
 function PhotoRequiredScreen() {
   const { profile, loadProfile } = useApp()
   const photoInput = useRef(null)
-  const [cropSrc, setCropSrc] = useState(null)
-  const [showCrop, setShowCrop] = useState(false)
   const [saving, setSaving] = useState(false)
 
   async function handlePhotoSelect(e) {
@@ -61,7 +58,7 @@ function PhotoRequiredScreen() {
         </button>
         <input ref={photoInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
       </div>
-      {showCrop && <AvatarCropModal src={cropSrc} onDone={handleCropDone} onClose={() => setShowCrop(false)} />}
+
     </div>
   )
 }

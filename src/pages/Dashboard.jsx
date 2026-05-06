@@ -37,22 +37,21 @@ export default function Dashboard({ onOpenProperty, onOpenSettings }) {
     <div className="min-h-screen bg-gray-50 page-enter">
       <div className="bg-brand-700">
         <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="FieldSnap" className="h-16 object-contain" />
-            <p className="text-brand-200 text-base font-medium">{t('dashboard.greeting', lang)}, {profile?.name?.split(' ')[0]}</p>
-          </div>
+          <img src="/logo.png" alt="FieldSnap" className="h-12 object-contain" />
           <div className="flex items-center gap-3">
             <NotificationBell />
-            {/* Avatar — opens settings */}
             <button onClick={onOpenSettings} className="active:scale-95">
               {profile?.photo_url
-                ? <img src={profile.photo_url} className="w-12 h-12 rounded-full object-cover border-2 border-brand-400" alt="profile" />
-                : <div className="w-12 h-12 bg-accent-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                ? <img src={profile.photo_url} className="w-10 h-10 rounded-full object-cover border-2 border-brand-400" alt="profile" />
+                : <div className="w-10 h-10 bg-accent-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
                     {profile?.name?.[0]?.toUpperCase()}
                   </div>
               }
             </button>
           </div>
+        </div>
+        <div className="px-4 pb-1">
+          <p className="text-brand-200 text-sm font-medium">{t('dashboard.greeting', lang)}, {profile?.name?.split(' ')[0]}</p>
         </div>
         <div className="flex px-4 pb-0">
           {['active','completed'].map(tb => (

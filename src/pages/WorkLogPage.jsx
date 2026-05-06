@@ -27,26 +27,77 @@ export default function WorkLogPage({ onBack }) {
 
   async function loadProperties() {
     const q = profile.role === 'owner'
-      ? supabase.from('properties').select('id,name,street').eq('status', 'active')
-      : supabase.from('property_contractors').select('property_id, properties(id,name,street)').eq('contractor_id', profile.id)
+      ? supabase.from('properties').select('id,name,street,lat,lng').eq('status', 'active')
+      : supabase.from('property_contractors').select('property_id, properties(id,name,street,lat,lng)').eq('contractor_id', profile.id)
     const { data } = await q
     const list = profile.role === 'owner' ? data : (data || []).map(r => r.properties).filter(Boolean)
     setProperties(list || [])
   }
 
+  function getDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371000
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLng = (lng2 - lng1) * Math.PI / 180
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2)
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  }
+
   async function handleSave() {
     if (!prop1) return
     setSaving(true)
-    const rows = [{ contractor_id: profile.id, property_id: prop1, log_date: date, day_type: dayType, slot: 1 }]
-    if (dayType === 'half' && prop2 && prop2 !== prop1) {
-      rows.push({ contractor_id: profile.id, property_id: prop2, log_date: date, day_type: 'half', slot: 2 })
+    try {
+      // Get current GPS position
+      let checkInLat = null, checkInLng = null, verified = false
+      try {
+        const pos = await new Promise((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, enableHighAccuracy: true })
+        )
+        checkInLat = pos.coords.latitude
+        checkInLng = pos.coords.longitude
+
+        // Check if within 200 meters of selected property
+        const prop = properties.find(p => p.id === prop1)
+        if (prop?.lat && prop?.lng) {
+          const dist = getDistance(checkInLat, checkInLng, prop.lat, prop.lng)
+          verified = dist <= 200
+          if (!verified) {
+            const proceed = window.confirm(
+              lang === 'es'
+                ? `Estás a ${Math.round(dist)}m de la propiedad. ¿Registrar de todas formas?`
+                : `You are ${Math.round(dist)}m away from the property. Log anyway?`
+            )
+            if (!proceed) { setSaving(false); return }
+          }
+        }
+      } catch {
+        // Location denied or unavailable — still allow logging
+      }
+
+      const rows = [{
+        contractor_id: profile.id, property_id: prop1, log_date: date,
+        day_type: dayType, slot: 1,
+        check_in_lat: checkInLat, check_in_lng: checkInLng,
+        check_in_time: new Date().toISOString(), verified
+      }]
+      if (dayType === 'half' && prop2 && prop2 !== prop1) {
+        rows.push({
+          contractor_id: profile.id, property_id: prop2, log_date: date,
+          day_type: 'half', slot: 2,
+          check_in_lat: checkInLat, check_in_lng: checkInLng,
+          check_in_time: new Date().toISOString(), verified: false
+        })
+      }
+      await supabase.from('work_logs').upsert(rows, { onConflict: 'contractor_id,property_id,log_date,slot' })
+      setShowForm(false)
+      setProp1(''); setProp2(''); setDayType('full')
+      setDate(format(new Date(), 'yyyy-MM-dd'))
+      loadLogs()
+    } catch(err) {
+      alert(err.message)
     }
-    await supabase.from('work_logs').upsert(rows, { onConflict: 'contractor_id,property_id,log_date,slot' })
     setSaving(false)
-    setShowForm(false)
-    setProp1(''); setProp2(''); setDayType('full')
-    setDate(format(new Date(), 'yyyy-MM-dd'))
-    loadLogs()
   }
 
   const filtered = logs.filter(l => {
@@ -146,9 +197,13 @@ export default function WorkLogPage({ onBack }) {
                     <p className="font-semibold text-gray-800 text-sm">{l.properties?.street || l.properties?.name}</p>
                     <p className="text-xs text-gray-400">{format(parseISO(l.log_date), 'EEEE, MMM d')}</p>
                   </div>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${l.day_type === 'full' ? 'bg-brand-100 text-brand-700' : 'bg-orange-100 text-orange-600'}`}>
-                    {l.day_type === 'full' ? (lang === 'es' ? 'Completo' : 'Full') : (lang === 'es' ? 'Medio' : 'Half')}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${l.day_type === 'full' ? 'bg-brand-100 text-brand-700' : 'bg-orange-100 text-orange-600'}`}>
+                      {l.day_type === 'full' ? (lang === 'es' ? 'Completo' : 'Full') : (lang === 'es' ? 'Medio' : 'Half')}
+                    </span>
+                    {l.verified && <span className="text-green-500 text-xs" title="GPS verified">✓</span>}
+                    {l.check_in_time && !l.verified && <span className="text-orange-400 text-xs" title="Not at property">⚠</span>}
+                  </div>
                 </div>
               ))}
             </div>

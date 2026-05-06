@@ -7,11 +7,11 @@ import Modal from './Modal'
 
 export default function AddPropertyModal({ onClose, onCreated }) {
   const { profile, lang } = useApp()
-  const [name, setName]     = useState(() => sessionStorage.getItem('fieldsnap_add_name') || '')
-  const [street, setStreet] = useState(() => sessionStorage.getItem('fieldsnap_add_street') || '')
-  const [city, setCity]     = useState(() => sessionStorage.getItem('fieldsnap_add_city') || '')
-  const [state, setState]   = useState(() => sessionStorage.getItem('fieldsnap_add_state') || '')
-  const [zip, setZip]       = useState(() => sessionStorage.getItem('fieldsnap_add_zip') || '')
+  const [name, setName]     = useState('')
+  const [street, setStreet] = useState('')
+  const [city, setCity]     = useState('')
+  const [state, setState]   = useState('')
+  const [zip, setZip]       = useState('')
   const [lat, setLat]       = useState(null)
   const [lng, setLng]       = useState(null)
   const [suggestions, setSuggestions] = useState([])
@@ -30,15 +30,9 @@ export default function AddPropertyModal({ onClose, onCreated }) {
       .then(({ data }) => setContractors(data || []))
   }, [])
 
-  useEffect(() => { sessionStorage.setItem('fieldsnap_add_name', name) }, [name])
-  useEffect(() => { sessionStorage.setItem('fieldsnap_add_street', street) }, [street])
-  useEffect(() => { sessionStorage.setItem('fieldsnap_add_city', city) }, [city])
-  useEffect(() => { sessionStorage.setItem('fieldsnap_add_state', state) }, [state])
-  useEffect(() => { sessionStorage.setItem('fieldsnap_add_zip', zip) }, [zip])
 
-  function clearDraft() {
-    ;['name','street','city','state','zip'].forEach(k => sessionStorage.removeItem(`fieldsnap_add_${k}`))
-  }
+
+
 
   function toggle(id) { setSelected(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]) }
 
@@ -122,7 +116,6 @@ export default function AddPropertyModal({ onClose, onCreated }) {
         const { error: assignError } = await supabase.from('property_contractors').insert(selected.map(cid => ({ property_id: prop.id, contractor_id: cid })))
         if (assignError) throw assignError
       }
-      clearDraft()
       onCreated()
     } catch (err) {
       alert(err.message || 'Could not save property.')

@@ -13,15 +13,22 @@ function PhotoRequiredScreen() {
   const { profile, setProfile } = useApp()
   const photoInput = useRef(null)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const lang = profile?.language || 'en'
 
   async function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
     setSaving(true)
+    setError('')
     try {
-      // Convert to JPEG via canvas for Android/HEIC compatibility
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = ev => resolve(ev.target.result)
+        reader.onerror = () => reject(new Error('Could not read file'))
+        reader.readAsDataURL(file)
+      })
       const blob = await new Promise((resolve) => {
-        const url = URL.createObjectURL(file)
         const img = new Image()
         img.onload = () => {
           const MAX = 1200
@@ -30,21 +37,22 @@ function PhotoRequiredScreen() {
           const canvas = document.createElement('canvas')
           canvas.width = w; canvas.height = h
           canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-          canvas.toBlob(b => { URL.revokeObjectURL(url); resolve(b) }, 'image/jpeg', 0.85)
+          canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85)
         }
-        img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
-        img.src = url
+        img.onerror = () => resolve(file)
+        img.src = dataUrl
       })
       const path = `profiles/${profile.id}/avatar_${Date.now()}.jpg`
       const { error: uploadErr } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
-      if (uploadErr) { alert('Upload error: ' + uploadErr.message); setSaving(false); return }
+      if (uploadErr) { setError('Upload error: ' + uploadErr.message); setSaving(false); return }
       const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
       const { error: updateErr } = await supabase.from('profiles').update({ photo_url: data.publicUrl }).eq('id', profile.id)
-      if (updateErr) { alert('Save error: ' + updateErr.message); setSaving(false); return }
+      if (updateErr) { setError('Save error: ' + updateErr.message); setSaving(false); return }
       setProfile({ ...profile, photo_url: data.publicUrl })
-    } catch(e) { alert('Error: ' + e.message) }
+    } catch(e) { setError('Error: ' + e.message) }
     setSaving(false)
   }
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-800 to-brand-900 flex flex-col items-center justify-center p-6">

@@ -19,8 +19,12 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
         }
         if (n.task_id) {
           const { data: task } = await supabase.from('tasks')
-            .select('property_id, properties(address)').eq('id', n.task_id).single()
-          propertyAddress = task?.properties?.address
+            .select('property_id').eq('id', n.task_id).single()
+          if (task?.property_id) {
+            const { data: prop } = await supabase.from('properties')
+              .select('address').eq('id', task.property_id).single()
+            propertyAddress = prop?.address
+          }
         }
         return { ...n, mentioner, propertyAddress }
       }))

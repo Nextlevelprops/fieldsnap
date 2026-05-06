@@ -62,14 +62,17 @@ export default function AddPropertyModal({ onClose, onCreated }) {
     const addr = s.address
     const houseNumber = addr.house_number || ''
     const road = addr.road || addr.pedestrian || ''
-    setStreet(`${houseNumber} ${road}`.trim())
+    const newStreet = `${houseNumber} ${road}`.trim()
+    setStreet(newStreet)
     setCity(addr.city || addr.town || addr.village || addr.county || '')
     setState(addr.state_code || addr.state || '')
     setZip(addr.postcode || '')
     setLat(parseFloat(s.lat))
     setLng(parseFloat(s.lon))
-    setSearchText(`${houseNumber} ${road}`.trim())
+    setSearchText(newStreet)
     setSuggestions([])
+    // Auto-set name from street if name is empty or was auto-set
+    setName(prev => (!prev || prev === street) ? newStreet : prev)
   }
 
   async function handlePhotoSelect(e) {

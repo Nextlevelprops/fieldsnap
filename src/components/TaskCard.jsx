@@ -1,6 +1,7 @@
 import { useApp } from '../context/AppContext'
 import { isPast, isToday, parseISO } from 'date-fns'
 import { t, formatShortDate } from '../lib/i18n'
+import { getTextPairForLang } from '../lib/translate'
 
 function shortName(fullName) {
   if (!fullName) return ''
@@ -14,8 +15,7 @@ export default function TaskCard({ task, lang: langProp, onTap }) {
   const lang = langCtx || langProp
   const isOverdue   = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && task.status !== 'completed'
   const isDueToday  = task.due_date && isToday(parseISO(task.due_date))
-  const titlePrimary   = lang === 'es' ? (task.title_es || task.title_en) : (task.title_en || task.title_es)
-  const titleSecondary = lang === 'es' ? task.title_en : task.title_es
+  const { primary: titlePrimary, secondary: titleSecondary } = getTextPairForLang(task.title_en, task.title_es, lang)
   const isCompleted = task.status === 'completed'
   const hasBoth     = isCompleted && task.photo_url && task.completion_photo_url
 

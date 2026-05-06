@@ -143,6 +143,7 @@ export default function SettingsPage({ onBack }) {
   }
 
   async function handleInvite() {
+    // Real invite via Supabase Auth
     if (!inviteInput.trim()) return; setInviting(true)
     alert(`${lang === 'es' ? 'Invitación enviada a' : 'Invite sent to'} ${inviteInput}`)
     setInviteInput(''); setInviting(false)

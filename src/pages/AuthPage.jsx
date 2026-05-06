@@ -35,6 +35,7 @@ export default function AuthPage() {
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
   const [resetSent, setResetSent] = useState(false)
+  const [signUpSuccess, setSignUpSuccess] = useState(false)
 
   if (!lang) {
     return (
@@ -58,8 +59,6 @@ export default function AuthPage() {
     if (error) setError(error.message)
     setLoading(false)
   }
-
-  const [signUpSuccess, setSignUpSuccess] = useState(false)
 
   async function handleSignUp(e) {
     e.preventDefault()

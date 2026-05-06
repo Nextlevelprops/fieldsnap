@@ -41,6 +41,9 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
     e.target.value = ''
     if (!files.length) return
     const remaining = 5 - photos.length
+    if (files.length > remaining) {
+      alert(lang === 'es' ? `Solo puedes agregar ${remaining} foto(s) más (máximo 5)` : `You can only add ${remaining} more photo(s) (max 5)`)
+    }
     const toAdd = files.slice(0, remaining)
     toAdd.forEach(file => {
       processFile(file, (blob, preview) => {
@@ -123,11 +126,15 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
               {photos.map((p, i) => (
                 <div key={i} className="relative flex-shrink-0">
                   <img src={p.preview} className="h-24 w-24 object-cover rounded-xl" alt="preview" />
+                  <div className="absolute top-1 left-1 bg-black bg-opacity-60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">{i+1}</div>
                   <button onClick={() => removePhoto(i)}
                     className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">✕</button>
                 </div>
               ))}
             </div>
+          )}
+          {photos.length > 0 && (
+            <p className="text-center text-xs text-gray-400 mb-2">{photos.length}/5 {lang === 'es' ? 'fotos seleccionadas' : 'photos selected'}</p>
           )}
           {photos.length < 5 && (
             <div className="flex gap-2">

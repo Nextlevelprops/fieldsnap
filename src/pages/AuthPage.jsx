@@ -59,8 +59,12 @@ export default function AuthPage() {
     setLoading(false)
   }
 
+  const [signUpSuccess, setSignUpSuccess] = useState(false)
+
   async function handleSignUp(e) {
-    e.preventDefault(); setError(''); setLoading(true)
+    e.preventDefault()
+    if (loading) return
+    setError(''); setLoading(true)
     try {
       if (!firstName.trim()) throw new Error(lang === 'es' ? 'El nombre es requerido' : 'First name is required')
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
@@ -70,26 +74,28 @@ export default function AuthPage() {
         options: { data: { full_name: fullName, phone, language: lang } }
       })
       if (authErr) throw authErr
-      const userId = data.user.id
-      const role = inviteToken ? 'contractor' : 'owner'
-      await supabase.from('profiles').insert({
-        id: userId,
-        name: fullName,
-        phone,
-        email,
-        language: lang,
-        role
-      })
-      // if invited, link to owner's properties
-      if (inviteToken && inviteOwnerId) {
-        // get all owner properties and link contractor
-        const { data: props } = await supabase.from('properties').select('id').eq('owner_id', inviteOwnerId)
-        if (props && props.length > 0) {
-          await supabase.from('property_contractors').insert(
-            props.map(p => ({ property_id: p.id, contractor_id: userId }))
-          )
+      const userId = data.user?.id
+      if (userId) {
+        const role = inviteToken ? 'contractor' : 'owner'
+        await supabase.from('profiles').insert({
+          id: userId,
+          name: fullName,
+          phone,
+          email,
+          language: lang,
+          role
+        })
+        if (inviteToken && inviteOwnerId) {
+          const { data: props } = await supabase.from('properties').select('id').eq('owner_id', inviteOwnerId)
+          if (props && props.length > 0) {
+            await supabase.from('property_contractors').insert(
+              props.map(p => ({ property_id: p.id, contractor_id: userId }))
+            )
+          }
         }
       }
+      setSignUpSuccess(true)
+      setEmail(''); setPassword(''); setFirstName(''); setLastName(''); setPhone('')
     } catch (err) { setError(err.message) }
     setLoading(false)
   }
@@ -112,8 +118,9 @@ export default function AuthPage() {
           <button onClick={() => setMode('signup')} className={`flex-1 pb-3 text-sm font-semibold ${mode==='signup'?'tab-active':'tab-inactive'}`}>{t('auth.createAccount',lang)}</button>
         </div>
 
-        {error     && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{error}</div>}
-        {resetSent && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">{t('auth.resetSent',lang)}</div>}
+        {error        && <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm">{error}</div>}
+        {resetSent    && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">{t('auth.resetSent',lang)}</div>}
+        {signUpSuccess && <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm">{lang === 'es' ? '✅ ¡Cuenta creada! Revisa tu correo y confirma tu cuenta para iniciar sesión.' : '✅ Account created! Check your email and confirm your account to sign in.'}</div>}
 
         <form onSubmit={mode==='signin'?handleSignIn:handleSignUp} className="space-y-3">
           {mode==='signup' && (

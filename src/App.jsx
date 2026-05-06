@@ -29,7 +29,7 @@ function PhotoRequiredScreen() {
       const { data } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
       const { error: updateErr } = await supabase.from('profiles').update({ photo_url: data.publicUrl }).eq('id', profile.id)
       if (updateErr) { alert('Save error: ' + updateErr.message); setSaving(false); return }
-      await loadProfile({ id: profile.id, email: profile.email })
+      setProfile({ ...profile, photo_url: data.publicUrl })
     } catch(e) { alert('Error: ' + e.message) }
     setSaving(false)
   }

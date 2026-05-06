@@ -155,7 +155,12 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
                   className="w-full btn-primary flex items-center justify-center gap-2">
                   <span>📷</span> {lang === 'es' ? 'Tomar foto' : 'Take Photo'}
                 </button>
-                <button onClick={() => { setShowPhotoChoice(false); galleryInput.current?.click() }}
+                <button onClick={() => { 
+                  setShowPhotoChoice(false)
+                  const remaining = 5 - photos.length
+                  alert(lang === 'es' ? `Puedes seleccionar hasta ${remaining} foto(s) más (máximo 5 en total)` : `You can select up to ${remaining} more photo(s) (5 max total)`)
+                  galleryInput.current?.click()
+                }}
                   className="w-full btn-secondary flex items-center justify-center gap-2">
                   <span>🖼️</span> {lang === 'es' ? 'Elegir de galería' : 'Choose from Gallery'}
                 </button>

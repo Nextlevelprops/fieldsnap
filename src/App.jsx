@@ -71,6 +71,7 @@ function PhotoRequiredScreen() {
             📷
           </div>
         </div>
+        {error && <p className="text-red-500 text-xs mb-3 bg-red-50 rounded-xl p-3 text-left">{error}</p>}
         <button
           onClick={() => photoInput.current?.click()}
           disabled={saving}

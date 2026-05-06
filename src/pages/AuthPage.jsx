@@ -26,7 +26,7 @@ export default function AuthPage() {
       })
     }
   }, [])
-  const [mode, setMode]         = useState('signin')
+  const [mode, setMode]         = useState(window.location.pathname.includes('/invite/') ? 'signup' : 'signin')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -108,7 +108,7 @@ export default function AuthPage() {
       </div>
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7">
         <div className="flex mb-6 border-b border-gray-100">
-          <button onClick={() => setMode('signin')} className={`flex-1 pb-3 text-sm font-semibold ${mode==='signin'?'tab-active':'tab-inactive'}`}>{t('auth.signIn',lang)}</button>
+          {!inviteToken && <button onClick={() => setMode('signin')} className={`flex-1 pb-3 text-sm font-semibold ${mode==='signin'?'tab-active':'tab-inactive'}`}>{t('auth.signIn',lang)}</button>}
           <button onClick={() => setMode('signup')} className={`flex-1 pb-3 text-sm font-semibold ${mode==='signup'?'tab-active':'tab-inactive'}`}>{t('auth.createAccount',lang)}</button>
         </div>
 

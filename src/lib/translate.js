@@ -144,29 +144,24 @@ export function localTranslate(text, fromLang, toLang) {
 export async function translateText(text, fromLang, toLang) {
   if (!text || fromLang === toLang) return text
 
-  // Local translation first so the UI works instantly and offline.
-  const local = localTranslate(text, fromLang, toLang)
-
-  // Try online translation, but do not depend on it.
+  // Try MyMemory free translation API (1000 free requests/day)
   try {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 2500)
-    const res = await fetch('https://libretranslate.com/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({ q: text, source: fromLang, target: toLang, format: 'text' })
-    })
+    const timer = setTimeout(() => controller.abort(), 3000)
+    const langPair = `${fromLang}|${toLang}`
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`
+    const res = await fetch(url, { signal: controller.signal })
     clearTimeout(timer)
     if (res.ok) {
       const data = await res.json()
-      const online = String(data.translatedText || '').trim()
-      if (online && online.toLowerCase() !== String(text).trim().toLowerCase()) return online
+      const translated = String(data.responseData?.translatedText || '').trim()
+      if (translated && translated.toLowerCase() !== text.toLowerCase()) return translated
     }
   } catch {
-    // ignore and use local fallback
+    // fall through to local
   }
-  return local || text
+
+  return localTranslate(text, fromLang, toLang) || text
 }
 
 export async function getBilingualText(text) {

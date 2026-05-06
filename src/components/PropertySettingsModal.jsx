@@ -146,6 +146,7 @@ export default function PropertySettingsModal({ property, lang, onClose, onUpdat
           <input className="input" placeholder={t('property.state', lang)} value={state} onChange={e=>setState(e.target.value.toUpperCase())} maxLength={2} />
           <input className="input col-span-2" placeholder={t('property.zip', lang)} value={zip} onChange={e=>setZip(e.target.value)} />
         </div>
+        {lat && lng && <p className="text-xs text-green-600 font-medium">✓ {lang === 'es' ? 'Coordenadas guardadas' : 'Coordinates saved'}</p>}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Property photo</label>

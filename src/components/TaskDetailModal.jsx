@@ -174,10 +174,28 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {task.photo_url && (
-                  <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="before" />
+                  <div className="relative flex-shrink-0">
+                    <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl" alt="before" />
+                    {!isCompleted && (
+                      <button onClick={async () => {
+                        if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
+                        await supabase.from('tasks').update({ photo_url: null }).eq('id', task.id)
+                        onRefresh()
+                      }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">✕</button>
+                    )}
+                  </div>
                 )}
                 {beforePhotos.map(p => (
-                  <img key={p.id} src={p.photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="before" />
+                  <div key={p.id} className="relative flex-shrink-0">
+                    <img src={p.photo_url} className="h-32 w-32 object-cover rounded-xl" alt="before" />
+                    {!isCompleted && (
+                      <button onClick={async () => {
+                        if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
+                        await supabase.from('task_photos').delete().eq('id', p.id)
+                        loadTaskPhotos()
+                      }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">✕</button>
+                    )}
+                  </div>
                 ))}
               </div>
               <input ref={beforeInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
@@ -254,10 +272,24 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {task.completion_photo_url && afterPhotos.length === 0 && (
-                  <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="after" />
+                  <div className="relative flex-shrink-0">
+                    <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl" alt="after" />
+                    <button onClick={async () => {
+                      if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
+                      await supabase.from('tasks').update({ completion_photo_url: null }).eq('id', task.id)
+                      onRefresh()
+                    }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">✕</button>
+                  </div>
                 )}
                 {afterPhotos.map(p => (
-                  <img key={p.id} src={p.photo_url} className="h-32 w-32 object-cover rounded-xl flex-shrink-0" alt="after" />
+                  <div key={p.id} className="relative flex-shrink-0">
+                    <img src={p.photo_url} className="h-32 w-32 object-cover rounded-xl" alt="after" />
+                    <button onClick={async () => {
+                      if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
+                      await supabase.from('task_photos').delete().eq('id', p.id)
+                      loadTaskPhotos()
+                    }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">✕</button>
+                  </div>
                 ))}
               </div>
               <input ref={afterInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'after')} />

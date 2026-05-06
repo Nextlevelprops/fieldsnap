@@ -5,6 +5,7 @@ import PropertyPage from './pages/PropertyPage'
 import SettingsPage from './components/SettingsPage'
 import AvatarCropModal from './components/AvatarCropModal'
 import { useState, useRef } from 'react'
+import NotificationsPage from './pages/NotificationsPage'
 import { supabase } from './lib/supabase'
 
 function PhotoRequiredScreen() {

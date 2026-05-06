@@ -19,7 +19,7 @@ function splitName(fullName) {
   return { first: parts[0] || '', last: parts.slice(1).join(' ') || '' }
 }
 
-export default function SettingsPage({ onBack }) {
+export default function SettingsPage({ onBack, onOpenWorkLog }) {
   const { profile, lang, signOut, setLang, loadProfile } = useApp()
   const [contractors, setContractors] = useState([])
   const [inviteInput, setInviteInput] = useState('')
@@ -275,7 +275,7 @@ export default function SettingsPage({ onBack }) {
           </div>
         </div>
 
-        <button onClick={() => setShowWorkLog(true)} className="card p-4 w-full text-left flex items-center gap-3 active:scale-[0.98]">
+        <button onClick={() => onOpenWorkLog && onOpenWorkLog()} className="card p-4 w-full text-left flex items-center gap-3 active:scale-[0.98]">
           <span className="text-2xl">📅</span>
           <div>
             <p className="font-semibold text-gray-800">{t('settings.logWorkDay',lang)}</p>
@@ -319,7 +319,7 @@ export default function SettingsPage({ onBack }) {
       </div>
 
       {selectedContractor && <ContractorProfileModal contractor={selectedContractor} lang={lang} onClose={() => { setSelectedContractor(null); loadContractors() }} />}
-      {showWorkLog && <WorkLogModal lang={lang} onClose={() => setShowWorkLog(false)} />}
+
       {cropUrl && <AvatarCropModal imageUrl={cropUrl} lang={lang} onDone={handleCropDone} onCancel={() => setCropUrl(null)} />}
     </div>
   )

@@ -83,6 +83,15 @@ export default function PropertyPage({ property, onBack, onRefreshDashboard }) {
                 {t('property.markComplete', lang)}
               </button>
             )}
+            {isOwner && property.status === 'completed' && (
+              <button onClick={async () => {
+                if (!window.confirm(lang === 'es' ? '¿Reabrir esta propiedad?' : 'Reopen this property?')) return
+                await supabase.from('properties').update({ status: 'active' }).eq('id', property.id)
+                onBack()
+              }} className="text-xs bg-yellow-500 text-white px-3 py-1 rounded-full font-semibold active:scale-95">
+                {lang === 'es' ? 'Reabrir' : 'Reopen'}
+              </button>
+            )}
           </div>
         </div>
 

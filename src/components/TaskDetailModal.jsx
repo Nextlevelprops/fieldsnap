@@ -7,6 +7,7 @@ import AnnotationCanvas from './AnnotationCanvas'
 
 export default function TaskDetailModal({ task, lang, propertyId, onClose, onRefresh }) {
   const { profile } = useApp()
+  const isOwner = profile?.role === 'owner'
   const [comments, setComments]     = useState([])
   const [commentText, setCommentText] = useState('')
   const [mentionSuggestions, setMentionSuggestions] = useState([])
@@ -179,7 +180,18 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
           {/* Header */}
           <div className="flex items-start justify-between gap-2 mb-4 pt-2">
             <h2 className="text-lg font-bold text-gray-800 flex-1">{title || t('task.noDescription', lang)}</h2>
-            <button onClick={onClose} className="text-gray-400 text-xl">✕</button>
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <button onClick={async () => {
+                  if (!window.confirm(lang === 'es' ? '¿Eliminar esta tarea?' : 'Delete this task?')) return
+                  await supabase.from('tasks').delete().eq('id', task.id)
+                  onRefresh(); onClose()
+                }} className="text-red-400 text-sm font-medium">
+                  {lang === 'es' ? 'Eliminar' : 'Delete'}
+                </button>
+              )}
+              <button onClick={onClose} className="text-gray-400 text-xl">✕</button>
+            </div>
           </div>
 
           {/* Translation */}

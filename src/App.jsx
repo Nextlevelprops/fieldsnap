@@ -58,7 +58,7 @@ function PhotoRequiredScreen() {
             : (profile?.language === 'es' ? 'Agregar foto de perfil' : 'Add Profile Photo')}
         </button>
         <input ref={photoInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
-      {showCrop && <AvatarCropModal src={cropSrc} onDone={handleCropDone} onClose={() => setShowCrop(false)} />}
+
       </div>
 
     </div>

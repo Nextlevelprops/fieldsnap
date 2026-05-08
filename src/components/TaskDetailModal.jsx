@@ -39,6 +39,9 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const [showPhotoChoice, setShowPhotoChoice] = useState(null) // 'before' or 'after'
 
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null)
+  const [fullscreenIndex, setFullscreenIndex] = useState(0)
+  const [fullscreenPhotos, setFullscreenPhotos] = useState([])
+  const touchStartX = useRef(null)
   const isCompleted = task.status === 'completed'
   const title     = lang==='es' ? (task.title_es||task.title_en) : (task.title_en||task.title_es)
   const titleOther = lang==='es' ? task.title_en : task.title_es
@@ -221,11 +224,44 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
     setCompleting(false)
   }
 
+  function openGallery(photos, index) {
+    setFullscreenPhotos(photos)
+    setFullscreenIndex(index)
+    setFullscreenPhoto(photos[index])
+  }
+
   if (fullscreenPhoto) {
+    const total = fullscreenPhotos.length
     return (
-      <div className="fixed inset-0 z-50 bg-black flex items-center justify-center" onClick={() => setFullscreenPhoto(null)}>
-        <button className="absolute top-4 right-4 text-white text-3xl z-10">✕</button>
+      <div
+        className="fixed inset-0 z-50 bg-black flex items-center justify-center"
+        onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
+        onTouchEnd={e => {
+          if (touchStartX.current === null) return
+          const diff = touchStartX.current - e.changedTouches[0].clientX
+          if (Math.abs(diff) > 50) {
+            const next = diff > 0
+              ? Math.min(fullscreenIndex + 1, total - 1)
+              : Math.max(fullscreenIndex - 1, 0)
+            setFullscreenIndex(next)
+            setFullscreenPhoto(fullscreenPhotos[next])
+          }
+          touchStartX.current = null
+        }}
+      >
+        <button className="absolute top-4 right-4 text-white text-3xl z-10" onClick={() => setFullscreenPhoto(null)}>✕</button>
+        {total > 1 && (
+          <p className="absolute top-4 left-0 right-0 text-center text-white text-sm z-10">{fullscreenIndex + 1} / {total}</p>
+        )}
+        {fullscreenIndex > 0 && (
+          <button onClick={() => { const i = fullscreenIndex - 1; setFullscreenIndex(i); setFullscreenPhoto(fullscreenPhotos[i]) }}
+            className="absolute left-3 text-white text-4xl z-10 px-2">‹</button>
+        )}
         <img src={fullscreenPhoto} className="max-w-full max-h-full object-contain" alt="fullscreen" />
+        {fullscreenIndex < total - 1 && (
+          <button onClick={() => { const i = fullscreenIndex + 1; setFullscreenIndex(i); setFullscreenPhoto(fullscreenPhotos[i]) }}
+            className="absolute right-3 text-white text-4xl z-10 px-2">›</button>
+        )}
       </div>
     )
   }
@@ -280,7 +316,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {task.photo_url && (
                   <div className="relative flex-shrink-0">
-                    <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => setFullscreenPhoto(task.photo_url)} />
+                    <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => { const all = [task.photo_url, ...beforePhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />
                     {!isCompleted && (
                       <button onClick={async () => {
                         if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
@@ -292,7 +328,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 )}
                 {beforePhotos.map(p => (
                   <div key={p.id} className="relative flex-shrink-0">
-                    <img src={p.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => setFullscreenPhoto(p.photo_url)} />
+                    <img src={p.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => { const all = [task.photo_url, ...beforePhotos.map(x=>x.photo_url)].filter(Boolean); openGallery(all, all.indexOf(p.photo_url)) }} />
                     {!isCompleted && (
                       <button onClick={async () => {
                         if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
@@ -399,7 +435,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {task.completion_photo_url && (
                   <div className="relative flex-shrink-0">
-                    <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="after" onClick={() => setFullscreenPhoto(task.completion_photo_url)} />
+                    <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="after" onClick={() => { const all = [task.completion_photo_url, ...afterPhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />
                     <button onClick={async () => {
                       if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
                       await supabase.from('tasks').update({ completion_photo_url: null }).eq('id', task.id)
@@ -409,7 +445,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 )}
                 {afterPhotos.map(p => (
                   <div key={p.id} className="relative flex-shrink-0">
-                    <img src={p.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="after" onClick={() => setFullscreenPhoto(p.photo_url)} />
+                    <img src={p.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="after" onClick={() => { const all = [task.completion_photo_url, ...afterPhotos.map(x=>x.photo_url)].filter(Boolean); openGallery(all, all.indexOf(p.photo_url)) }} />
                     <button onClick={async () => {
                       if (!window.confirm(lang === 'es' ? '¿Seguro que quieres eliminar esta foto?' : 'Are you sure you want to delete this photo?')) return
                       await supabase.from('task_photos').delete().eq('id', p.id)

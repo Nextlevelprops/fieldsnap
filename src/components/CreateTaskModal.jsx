@@ -145,11 +145,26 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
             <p className="text-center text-xs text-gray-400 mb-2">{photos.length}/5 {lang === 'es' ? 'fotos seleccionadas' : 'photos selected'}</p>
           )}
           {photos.length < 5 && (
-            <button onClick={() => setShowPhotoChoice(true)}
-              className="w-full h-16 border-2 border-dashed border-brand-300 rounded-xl flex items-center justify-center gap-2 text-brand-600 active:scale-95">
+            <div
+              onClick={() => setShowPhotoChoice(true)}
+              onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('bg-brand-50') }}
+              onDragLeave={e => e.currentTarget.classList.remove('bg-brand-50')}
+              onDrop={e => {
+                e.preventDefault()
+                e.currentTarget.classList.remove('bg-brand-50')
+                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+                if (!files.length) return
+                const remaining = 5 - photos.length
+                files.slice(0, remaining).forEach(file => {
+                  processFile(file, (blob, preview) => {
+                    setPhotos(prev => prev.length < 5 ? [...prev, { file: blob, preview }] : prev)
+                  })
+                })
+              }}
+              className="w-full h-16 border-2 border-dashed border-brand-300 rounded-xl flex items-center justify-center gap-2 text-brand-600 active:scale-95 cursor-pointer transition-colors">
               <span className="text-xl">📷</span>
-              <span className="text-sm font-medium">{lang === 'es' ? 'Agregar foto' : 'Add Photo'}</span>
-            </button>
+              <span className="text-sm font-medium">{lang === 'es' ? 'Agregar foto o arrastra aquí' : 'Add Photo or drag here'}</span>
+            </div>
           )}
           <input ref={cameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
           <input ref={galleryInput} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />

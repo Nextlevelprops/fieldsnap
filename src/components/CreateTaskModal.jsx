@@ -166,7 +166,7 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
               <span className="text-sm font-medium">{lang === 'es' ? 'Agregar foto o arrastra aquí' : 'Add Photo or drag here'}</span>
             </div>
           )}
-          <input ref={cameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+          <input ref={cameraInput} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
           <input ref={galleryInput} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />
 
           {showPhotoChoice && (

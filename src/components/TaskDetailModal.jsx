@@ -58,12 +58,32 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
 
   async function handleAddPhoto(e, type) {
     const file = e.target.files?.[0]; if (!file) return
+    e.target.value = ''
     const current = type === 'before' ? beforePhotos : afterPhotos
     if (current.length >= 5) { alert(lang === 'es' ? 'Máximo 5 fotos' : 'Maximum 5 photos'); return }
     setUploadingPhoto(true)
     try {
+      const blob = await new Promise(resolve => {
+        const reader = new FileReader()
+        reader.onload = ev => {
+          const img = new Image()
+          img.onload = () => {
+            const MAX = 1600
+            let w = img.naturalWidth, h = img.naturalHeight
+            if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+            const canvas = document.createElement('canvas')
+            canvas.width = w; canvas.height = h
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+            canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85)
+          }
+          img.onerror = () => resolve(file)
+          img.src = ev.target.result
+        }
+        reader.onerror = () => resolve(file)
+        reader.readAsDataURL(file)
+      })
       const path = `tasks/${task.id}/${type}_${Date.now()}.jpg`
-      const { error } = await supabase.storage.from('fieldsnap-uploads').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true })
+      const { error } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
       if (error) throw error
       const { data: urlData } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
       await supabase.from('task_photos').insert({ task_id: task.id, photo_url: urlData.publicUrl, type })
@@ -273,7 +293,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                   </div>
                 ))}
               </div>
-              <input ref={beforeInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
+              <input ref={beforeInput} type="file" accept="image/*" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
               <input ref={beforeGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
             </div>
           )}
@@ -388,7 +408,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                   </div>
                 ))}
               </div>
-              <input ref={afterInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleAddPhoto(e, 'after')} />
+              <input ref={afterInput} type="file" accept="image/*" className="hidden" onChange={e => handleAddPhoto(e, 'after')} />
               <input ref={afterGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'after')} />
             </div>
           )}

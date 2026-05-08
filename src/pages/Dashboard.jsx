@@ -12,9 +12,19 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
   const [properties, setProperties] = useState([])
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
+  const [myTaskCount, setMyTaskCount] = useState(0)
   const isOwner = profile?.role === 'owner'
 
-  useEffect(() => { loadProperties() }, [profile])
+  useEffect(() => { loadProperties(); loadMyTaskCount() }, [profile])
+
+  async function loadMyTaskCount() {
+    if (!profile) return
+    const { count } = await supabase.from('tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('assigned_to', profile.id)
+      .eq('status', 'open')
+    setMyTaskCount(count || 0)
+  }
 
   async function loadProperties() {
     if (!profile) return
@@ -42,6 +52,11 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
             <NotificationBell onOpen={() => onOpenNotifications()} />
             <button onClick={onOpenMyTasks} className="relative w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center active:scale-95">
               <span className="text-lg">📋</span>
+              {myTaskCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  {myTaskCount > 9 ? '9+' : myTaskCount}
+                </span>
+              )}
             </button>
             <button onClick={onOpenSettings} className="active:scale-95">
               {profile?.photo_url

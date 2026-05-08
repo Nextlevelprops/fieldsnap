@@ -21,23 +21,19 @@ serve(async (req) => {
       });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
+    const arrayBuffer = await file.arrayBuffer()
+    const uint8Array = new Uint8Array(arrayBuffer)
 
-    // Use sharp via npm for HEIC conversion
-    const { default: sharp } = await import("npm:sharp@0.33.2");
+    // Use imagescript which is pure Deno/WASM - no native deps needed
+    const { Image } = await import("https://deno.land/x/imagescript@1.2.15/mod.ts")
     
-    const jpegBuffer = await sharp(uint8Array)
-      .rotate() // auto-rotate based on EXIF
-      .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
-      .jpeg({ quality: 85 })
-      .toBuffer();
+    const decoded = await Image.decode(uint8Array)
+    const jpeg = await decoded.encodeJPEG(85)
 
-    return new Response(jpegBuffer, {
+    return new Response(jpeg, {
       headers: {
         ...corsHeaders,
         "Content-Type": "image/jpeg",
-        "Content-Disposition": "inline",
       },
     });
   } catch (err: any) {

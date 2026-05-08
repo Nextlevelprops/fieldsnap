@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { getBilingualText } from '../lib/translate'
@@ -17,6 +17,17 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   const [saving, setSaving]     = useState(false)
   const [showPhotoChoice, setShowPhotoChoice] = useState(false)
   const [showPhotoWarning, setShowPhotoWarning] = useState(false)
+  const [assignedTo, setAssignedTo] = useState('')
+  const [contractors, setContractors] = useState([])
+  useEffect(() => { loadContractors() }, [])
+
+  async function loadContractors() {
+    const { data } = await supabase.from('property_contractors')
+      .select('contractor_id, profiles(id, name)')
+      .eq('property_id', propertyId)
+    setContractors((data || []).map(r => r.profiles).filter(Boolean))
+  }
+
   const cameraInput = useRef(null)
   const galleryInput = useRef(null)
 
@@ -91,6 +102,7 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
         title_es: titleEs,
         photo_url: photoUrl,
         due_date: dueDate || null,
+        assigned_to: assignedTo || null,
         status: 'open'
       }).select().single()
       if (error) throw error
@@ -233,6 +245,18 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
           <label className="block text-sm font-medium text-gray-600 mb-1">{t('createTask.dueDate', lang)}</label>
           <input type="date" className="input" value={dueDate} onChange={e => setDueDate(e.target.value)} />
         </div>
+
+        {contractors.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">{lang === 'es' ? 'Asignar a' : 'Assign to'}</label>
+            <select className="input" value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
+              <option value="">{lang === 'es' ? 'Sin asignar' : 'Unassigned'}</option>
+              {contractors.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <button onClick={handleSave} className="btn-primary w-full" disabled={saving}>
           {saving ? t('action.saving', lang) : t('createTask.save', lang)}

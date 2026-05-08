@@ -6,6 +6,7 @@ import SettingsPage from './components/SettingsPage'
 import AvatarCropModal from './components/AvatarCropModal'
 import { useState, useRef } from 'react'
 import NotificationsPage from './pages/NotificationsPage'
+import MyTasksPage from './pages/MyTasksPage'
 import WorkLogPage from './pages/WorkLogPage'
 import { supabase } from './lib/supabase'
 import { subscribeToPush } from './lib/push'
@@ -99,6 +100,7 @@ export default function App() {
   const [page, setPage]             = useState('dashboard')
   const [activeProperty, setActiveProperty] = useState(null)
   const [notifTask, setNotifTask] = useState(null)
+  const [page, setPageState] = useState('dashboard')
 
   // Still loading auth state
   if (session === undefined || (session && profile === undefined)) {
@@ -114,6 +116,10 @@ export default function App() {
   // Force photo upload before accessing app
   if (session && profile && !profile.photo_url) {
     return <PhotoRequiredScreen />
+  }
+
+  if (page === 'mytasks') {
+    return <MyTasksPage onBack={() => setPage('dashboard')} />
   }
 
   if (page === 'settings') {
@@ -156,7 +162,7 @@ export default function App() {
   return (
     <Dashboard
       onOpenProperty={p => { setActiveProperty(p); setPage('property') }}
-      onOpenSettings={() => setPage('settings')} onOpenNotifications={() => setPage('notifications')}
+      onOpenSettings={() => setPage('settings')} onOpenNotifications={() => setPage('notifications')} onOpenMyTasks={() => setPage('mytasks')}
     />
   )
 }

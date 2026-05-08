@@ -10,6 +10,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const { profile } = useApp()
   const isOwner = profile?.role === 'owner'
   const [editingDueDate, setEditingDueDate] = useState(false)
+  const [assignedTo, setAssignedTo] = useState(task.assigned_to || '')
   const [dueDateValue, setDueDateValue] = useState(task.due_date ? task.due_date.slice(0,10) : '')
   const [comments, setComments]     = useState([])
   const [commentText, setCommentText] = useState('')
@@ -406,6 +407,27 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 )}
               </div>
             </div>
+            {isOwner && !isCompleted && contractors.length > 0 && (
+              <div className="bg-gray-50 rounded-xl p-3 col-span-2">
+                <p className="text-xs text-gray-400 mb-1">{lang === 'es' ? 'Asignado a' : 'Assigned to'}</p>
+                <select className="input text-sm py-1 w-full" value={assignedTo}
+                  onChange={async e => {
+                    setAssignedTo(e.target.value)
+                    await supabase.from('tasks').update({ assigned_to: e.target.value || null }).eq('id', task.id)
+                    onRefresh()
+                  }}>
+                  <option value="">{lang === 'es' ? 'Sin asignar' : 'Unassigned'}</option>
+                  {contractors.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {!isOwner && task.assigned_to === profile.id && (
+              <div className="bg-blue-50 rounded-xl p-3 col-span-2">
+                <p className="text-xs text-blue-500">{lang === 'es' ? 'Asignado a ti' : 'Assigned to you'}</p>
+              </div>
+            )}
             {task.completer?.name && (
               <div className="bg-green-50 rounded-xl p-3">
                 <p className="text-xs text-green-600">{t('taskDetail.completedBy', lang)}</p>

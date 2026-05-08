@@ -97,6 +97,20 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
     setUploadingPhoto(false)
   }
 
+  const isDesktop = typeof navigator !== 'undefined' && navigator.maxTouchPoints === 0
+
+  function handleDropPhoto(e, type) {
+    e.preventDefault()
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+    if (!files.length) return
+    const current = type === 'before' ? beforePhotos : afterPhotos
+    const remaining = 5 - current.length
+    files.slice(0, remaining).forEach(file => {
+      const fakeEvent = { target: { files: [file], value: '' } }
+      handleAddPhoto(fakeEvent, type)
+    })
+  }
+
   async function loadComments() {
     const { data } = await supabase.from('comments')
       .select('*, author:profiles!comments_user_id_fkey(name,photo_url)')
@@ -314,7 +328,9 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                   </button>
                 )}
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1"
+                onDragOver={isDesktop ? e => e.preventDefault() : undefined}
+                onDrop={isDesktop && !isCompleted ? e => handleDropPhoto(e, 'before') : undefined}>
                 {task.photo_url && (
                   <div className="relative flex-shrink-0">
                     <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => { const all = [task.photo_url, ...beforePhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />
@@ -456,7 +472,9 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                   </button>
                 )}
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1"
+                onDragOver={isDesktop ? e => e.preventDefault() : undefined}
+                onDrop={isDesktop ? e => handleDropPhoto(e, 'after') : undefined}>
                 {task.completion_photo_url && (
                   <div className="relative flex-shrink-0">
                     <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="after" onClick={() => { const all = [task.completion_photo_url, ...afterPhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />

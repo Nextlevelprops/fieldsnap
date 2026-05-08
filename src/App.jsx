@@ -127,7 +127,7 @@ export default function App() {
   }
 
   if (page === 'settings') {
-    return <SettingsPage onBack={() => setPage('dashboard')} onOpenWorkLog={() => setPage('worklog')} />
+    return <SettingsPage onBack={() => setPage('dashboard')} onOpenWorkLog={() => setPage('worklog')} onOpenHelp={() => setPage('help')} />
   }
 
   if (page === 'worklog') {
@@ -166,7 +166,7 @@ export default function App() {
   return (
     <Dashboard
       onOpenProperty={p => { setActiveProperty(p); setPage('property') }}
-      onOpenSettings={() => setPage('settings')} onOpenNotifications={() => setPage('notifications')} onOpenMyTasks={() => setPage('mytasks')} onOpenHelp={() => setPage('help')}
+      onOpenSettings={() => setPage('settings')} onOpenNotifications={() => setPage('notifications')} onOpenMyTasks={() => setPage('mytasks')}
     />
   )
 }

@@ -19,7 +19,7 @@ function splitName(fullName) {
   return { first: parts[0] || '', last: parts.slice(1).join(' ') || '' }
 }
 
-export default function SettingsPage({ onBack, onOpenWorkLog }) {
+export default function SettingsPage({ onBack, onOpenWorkLog, onOpenHelp }) {
   const { profile, lang, signOut, setLang, loadProfile } = useApp()
   const [contractors, setContractors] = useState([])
   const [inviteInput, setInviteInput] = useState('')

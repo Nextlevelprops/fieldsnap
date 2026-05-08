@@ -42,21 +42,23 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   async function processFile(file, callback) {
     console.log("File type:", file.type, "File name:", file.name, "File size:", file.size)
     try {
-      // Convert HEIC/HEIF to JPEG first
+      // Convert HEIC/HEIF to JPEG first using browser native support
       let processableFile = file
-      if (file.type === 'image/heic' || file.type === 'image/heif' ||
-          file.name?.toLowerCase().endsWith('.heic') || file.name?.toLowerCase().endsWith('.heif')) {
+      const isHeic = file.type === 'image/heic' || file.type === 'image/heif' ||
+          file.name?.toLowerCase().endsWith('.heic') || file.name?.toLowerCase().endsWith('.heif')
+      if (isHeic) {
         try {
-          const fd = new FormData()
-          fd.append('file', file, file.name || 'photo.heic')
-          const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/convert-heic`, {
-            method: 'POST',
-            body: fd,
-          })
-          if (resp.ok) {
-            const jpegBlob = await resp.blob()
-            processableFile = new File([jpegBlob], 'converted.jpg', { type: 'image/jpeg' })
-          }
+          const bitmap = await createImageBitmap(file)
+          const canvas = document.createElement('canvas')
+          canvas.width = Math.min(bitmap.width, 1600)
+          canvas.height = Math.round(bitmap.height * (canvas.width / bitmap.width))
+          const ctx = canvas.getContext('2d')
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(0, 0, canvas.width, canvas.height)
+          ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+          bitmap.close()
+          const jpegBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+          processableFile = new File([jpegBlob], 'converted.jpg', { type: 'image/jpeg' })
         } catch(e) { console.error('HEIC conversion failed:', e) }
       }
       const url = URL.createObjectURL(processableFile)

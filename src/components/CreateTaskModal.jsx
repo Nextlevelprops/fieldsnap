@@ -40,6 +40,7 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   const galleryInput = useRef(null)
 
   async function processFile(file, callback) {
+    console.log("File type:", file.type, "File name:", file.name, "File size:", file.size)
     try {
       // Convert HEIC/HEIF to JPEG first
       let processableFile = file

@@ -46,8 +46,18 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
       let processableFile = file
       if (file.type === 'image/heic' || file.type === 'image/heif' ||
           file.name?.toLowerCase().endsWith('.heic') || file.name?.toLowerCase().endsWith('.heif')) {
-        const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
-        processableFile = Array.isArray(converted) ? converted[0] : converted
+        try {
+          const fd = new FormData()
+          fd.append('file', file, file.name || 'photo.heic')
+          const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/convert-heic`, {
+            method: 'POST',
+            body: fd,
+          })
+          if (resp.ok) {
+            const jpegBlob = await resp.blob()
+            processableFile = new File([jpegBlob], 'converted.jpg', { type: 'image/jpeg' })
+          }
+        } catch(e) { console.error('HEIC conversion failed:', e) }
       }
       const url = URL.createObjectURL(processableFile)
       const img = new Image()

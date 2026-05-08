@@ -68,10 +68,20 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
     try {
       if (file.type === 'image/heic' || file.type === 'image/heif' ||
           (file.name && (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')))) {
-        console.log("Converting HEIC...")
-        const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
-        processableFile = Array.isArray(converted) ? converted[0] : converted
-        console.log("HEIC converted:", processableFile.type, processableFile.size)
+        console.log("Converting HEIC via Edge Function...")
+        const fd = new FormData()
+        fd.append('file', file, file.name || 'photo.heic')
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/convert-heic`, {
+          method: 'POST',
+          body: fd,
+        })
+        if (resp.ok) {
+          const jpegBlob = await resp.blob()
+          processableFile = new File([jpegBlob], 'converted.jpg', { type: 'image/jpeg' })
+          console.log("HEIC converted successfully:", processableFile.size)
+        } else {
+          console.error("Edge function conversion failed:", await resp.text())
+        }
       }
     } catch(e) { console.error('HEIC conversion failed:', e) }
 

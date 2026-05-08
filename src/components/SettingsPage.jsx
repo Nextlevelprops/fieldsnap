@@ -288,6 +288,15 @@ export default function SettingsPage({ onBack, onOpenWorkLog, onOpenHelp }) {
           <span className="ml-auto text-gray-300">›</span>
         </button>
 
+        <button onClick={() => onOpenHelp && onOpenHelp()} className="card p-4 w-full text-left flex items-center gap-3 active:scale-[0.98]">
+          <span className="text-2xl">❓</span>
+          <div>
+            <p className="font-semibold text-gray-800">{lang === 'es' ? 'Ayuda' : 'Help'}</p>
+            <p className="text-sm text-gray-400">{lang === 'es' ? 'Guía de la app' : 'App guide & how-to'}</p>
+          </div>
+          <span className="ml-auto text-gray-300">›</span>
+        </button>
+
         {isOwner && (
           <div className="card p-5">
             <h2 className="font-bold text-gray-800 mb-4">{t('settings.contractors',lang)}</h2>

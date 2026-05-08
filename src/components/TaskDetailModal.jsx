@@ -256,34 +256,93 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
     const total = fullscreenPhotos.length
     return (
       <div
-        className="fixed inset-0 z-50 bg-black flex items-center justify-center"
-        onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
+        className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
+        onTouchStart={e => {
+          if (e.touches.length === 2) {
+            // pinch start
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            touchStartX.current = null
+            touchStartX._pinchDist = Math.sqrt(dx*dx + dy*dy)
+            touchStartX._scale = touchStartX._currentScale || 1
+          } else {
+            touchStartX.current = e.touches[0].clientX
+            touchStartX._pinchDist = null
+          }
+        }}
+        onTouchMove={e => {
+          if (e.touches.length === 2 && touchStartX._pinchDist) {
+            e.preventDefault()
+            const dx = e.touches[0].clientX - e.touches[1].clientX
+            const dy = e.touches[0].clientY - e.touches[1].clientY
+            const dist = Math.sqrt(dx*dx + dy*dy)
+            const scale = Math.min(Math.max(touchStartX._scale * (dist / touchStartX._pinchDist), 1), 5)
+            touchStartX._currentScale = scale
+            const img = document.getElementById('fs-img')
+            if (img) img.style.transform = `scale(${scale})`
+          }
+        }}
         onTouchEnd={e => {
+          if (touchStartX._pinchDist) {
+            touchStartX._pinchDist = null
+            return
+          }
           if (touchStartX.current === null) return
           const diff = touchStartX.current - e.changedTouches[0].clientX
-          if (Math.abs(diff) > 50) {
+          const scale = touchStartX._currentScale || 1
+          if (scale <= 1 && Math.abs(diff) > 50) {
             const next = diff > 0
               ? Math.min(fullscreenIndex + 1, total - 1)
               : Math.max(fullscreenIndex - 1, 0)
+            touchStartX._currentScale = 1
+            const img = document.getElementById('fs-img')
+            if (img) img.style.transform = 'scale(1)'
             setFullscreenIndex(next)
             setFullscreenPhoto(fullscreenPhotos[next])
           }
           touchStartX.current = null
         }}
       >
-        <button className="absolute top-4 right-4 text-white text-3xl z-10" onClick={() => setFullscreenPhoto(null)}>✕</button>
+        <button className="absolute top-4 right-4 text-white text-3xl z-10" onClick={() => {
+          touchStartX._currentScale = 1
+          setFullscreenPhoto(null)
+        }}>✕</button>
         {total > 1 && (
           <p className="absolute top-4 left-0 right-0 text-center text-white text-sm z-10">{fullscreenIndex + 1} / {total}</p>
         )}
         {fullscreenIndex > 0 && (
-          <button onClick={() => { const i = fullscreenIndex - 1; setFullscreenIndex(i); setFullscreenPhoto(fullscreenPhotos[i]) }}
-            className="absolute left-3 text-white text-4xl z-10 px-2">‹</button>
+          <button onClick={() => {
+            touchStartX._currentScale = 1
+            const img = document.getElementById('fs-img')
+            if (img) img.style.transform = 'scale(1)'
+            const i = fullscreenIndex - 1; setFullscreenIndex(i); setFullscreenPhoto(fullscreenPhotos[i])
+          }} className="absolute left-3 text-white text-4xl z-10 px-2">‹</button>
         )}
-        <img src={fullscreenPhoto} className="max-w-full max-h-full object-contain" alt="fullscreen" />
+        <img
+          id="fs-img"
+          src={fullscreenPhoto}
+          className="max-w-full max-h-full object-contain transition-transform duration-100"
+          style={{transformOrigin: 'center center'}}
+          alt="fullscreen"
+          onDoubleClick={e => {
+            const img = e.currentTarget
+            const current = touchStartX._currentScale || 1
+            const next = current > 1 ? 1 : 2.5
+            touchStartX._currentScale = next
+            img.style.transform = `scale(${next})`
+          }}
+        />
         {fullscreenIndex < total - 1 && (
-          <button onClick={() => { const i = fullscreenIndex + 1; setFullscreenIndex(i); setFullscreenPhoto(fullscreenPhotos[i]) }}
-            className="absolute right-3 text-white text-4xl z-10 px-2">›</button>
+          <button onClick={() => {
+            touchStartX._currentScale = 1
+            const img = document.getElementById('fs-img')
+            if (img) img.style.transform = 'scale(1)'
+            const i = fullscreenIndex + 1; setFullscreenIndex(i); setFullscreenPhoto(fullscreenPhotos[i])
+          }} className="absolute right-3 text-white text-4xl z-10 px-2">›</button>
         )}
+        <p className="absolute bottom-6 left-0 right-0 text-center text-gray-500 text-xs z-10">
+          {touchStartX._currentScale > 1 ? '' : (lang === 'es' ? 'Pellizca o doble toque para ampliar' : 'Pinch or double tap to zoom')}
+        </p>
       </div>
     )
   }

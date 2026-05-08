@@ -159,7 +159,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   }
 
   async function handleComplete() {
-    if (compPhotos.length === 0 && !compPreview) { alert(t('taskDetail.proofRequired', lang)); return }
+    if (compPhotos.length === 0) { alert(t('taskDetail.proofRequired', lang)); return }
     setCompleting(true)
     try {
       const photos = compPhotos.length > 0 ? compPhotos : [{ file: annotatedBlob || compPhoto, preview: compPreview }]
@@ -410,6 +410,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                     </button>
                   )}
                   <input ref={compCameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+                  
                   <input ref={compGalleryInput} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />
                   {showCompPhotoChoice && (
                     <div className="fixed inset-0 z-50 flex items-end" style={{background:'rgba(0,0,0,0.5)'}} onClick={() => setShowCompPhotoChoice(false)}>
@@ -453,7 +454,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                   )}
                   <div className="flex gap-2">
                     <button onClick={() => setShowComplete(false)} className="flex-1 btn-secondary text-sm">{t('taskDetail.cancel', lang)}</button>
-                    <button onClick={handleComplete} className="flex-1 btn-primary text-sm" disabled={completing||!compPreview}>
+                    <button onClick={handleComplete} className="flex-1 btn-primary text-sm" disabled={completing||compPhotos.length===0}>
                       {completing ? t('action.loading', lang) : t('taskDetail.confirm', lang)}
                     </button>
                   </div>

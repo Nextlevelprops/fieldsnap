@@ -63,23 +63,49 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
 
   async function processAndUploadPhoto(file, type) {
     const blob = await new Promise(resolve => {
-      const reader = new FileReader()
-      reader.onload = ev => {
-        const img = new Image()
-        img.onload = () => {
-          const MAX = 1600
-          let w = img.naturalWidth, h = img.naturalHeight
-          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
-          const canvas = document.createElement('canvas')
-          canvas.width = w; canvas.height = h
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-          canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85)
-        }
-        img.onerror = () => resolve(file)
-        img.src = ev.target.result
+      // Create object URL to load image regardless of format (HEIC, JPEG, PNG, etc)
+      const objectUrl = URL.createObjectURL(file)
+      const img = new Image()
+      img.onload = () => {
+        const MAX = 1600
+        let w = img.naturalWidth, h = img.naturalHeight
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, w, h)
+        ctx.drawImage(img, 0, 0, w, h)
+        canvas.toBlob(b => {
+          URL.revokeObjectURL(objectUrl)
+          resolve(b || file)
+        }, 'image/jpeg', 0.85)
       }
-      reader.onerror = () => resolve(file)
-      reader.readAsDataURL(file)
+      img.onerror = () => {
+        // Fallback: read as data URL
+        URL.revokeObjectURL(objectUrl)
+        const reader = new FileReader()
+        reader.onload = ev => {
+          const img2 = new Image()
+          img2.onload = () => {
+            const MAX = 1600
+            let w = img2.naturalWidth, h = img2.naturalHeight
+            if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+            const canvas = document.createElement('canvas')
+            canvas.width = w; canvas.height = h
+            const ctx = canvas.getContext('2d')
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, 0, w, h)
+            ctx.drawImage(img2, 0, 0, w, h)
+            canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85)
+          }
+          img2.onerror = () => resolve(file)
+          img2.src = ev.target.result
+        }
+        reader.onerror = () => resolve(file)
+        reader.readAsDataURL(file)
+      }
+      img.src = objectUrl
     })
     const path = `tasks/${task.id}/${type}_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
     const { error } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })

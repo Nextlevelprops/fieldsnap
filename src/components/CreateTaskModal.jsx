@@ -47,13 +47,41 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
       const canvas = document.createElement('canvas')
       canvas.width = w; canvas.height = h
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      const ctx = canvas.getContext('2d')
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, w, h)
+      ctx.drawImage(img, 0, 0, w, h)
       canvas.toBlob(blob => {
         if (blob) callback(blob, URL.createObjectURL(blob))
         URL.revokeObjectURL(url)
       }, 'image/jpeg', 0.85)
     }
-    img.onerror = () => callback(file, url)
+    img.onerror = () => {
+      // Fallback for HEIC or unsupported formats
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const img2 = new Image()
+        img2.onload = () => {
+          const MAX = 1600
+          let w = img2.naturalWidth, h = img2.naturalHeight
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          const ctx = canvas.getContext('2d')
+          ctx.fillStyle = '#ffffff'
+          ctx.fillRect(0, 0, w, h)
+          ctx.drawImage(img2, 0, 0, w, h)
+          canvas.toBlob(blob => {
+            if (blob) callback(blob, URL.createObjectURL(blob))
+          }, 'image/jpeg', 0.85)
+        }
+        img2.onerror = () => callback(file, url)
+        img2.src = ev.target.result
+      }
+      reader.onerror = () => callback(file, url)
+      reader.readAsDataURL(file)
+      URL.revokeObjectURL(url)
+    }
     img.src = url
   }
 

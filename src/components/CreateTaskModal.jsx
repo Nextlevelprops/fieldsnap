@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import heic2any from 'heic2any'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { getBilingualText } from '../lib/translate'
@@ -38,51 +39,38 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   const cameraInput = useRef(null)
   const galleryInput = useRef(null)
 
-  function processFile(file, callback) {
-    const url = URL.createObjectURL(file)
-    const img = new Image()
-    img.onload = () => {
-      const MAX = 1600
-      let w = img.naturalWidth, h = img.naturalHeight
-      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
-      const canvas = document.createElement('canvas')
-      canvas.width = w; canvas.height = h
-      const ctx = canvas.getContext('2d')
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(0, 0, w, h)
-      ctx.drawImage(img, 0, 0, w, h)
-      canvas.toBlob(blob => {
-        if (blob) callback(blob, URL.createObjectURL(blob))
-        URL.revokeObjectURL(url)
-      }, 'image/jpeg', 0.85)
-    }
-    img.onerror = () => {
-      // Fallback for HEIC or unsupported formats
-      const reader = new FileReader()
-      reader.onload = ev => {
-        const img2 = new Image()
-        img2.onload = () => {
-          const MAX = 1600
-          let w = img2.naturalWidth, h = img2.naturalHeight
-          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
-          const canvas = document.createElement('canvas')
-          canvas.width = w; canvas.height = h
-          const ctx = canvas.getContext('2d')
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(0, 0, w, h)
-          ctx.drawImage(img2, 0, 0, w, h)
-          canvas.toBlob(blob => {
-            if (blob) callback(blob, URL.createObjectURL(blob))
-          }, 'image/jpeg', 0.85)
-        }
-        img2.onerror = () => callback(file, url)
-        img2.src = ev.target.result
+  async function processFile(file, callback) {
+    try {
+      // Convert HEIC/HEIF to JPEG first
+      let processableFile = file
+      if (file.type === 'image/heic' || file.type === 'image/heif' ||
+          file.name?.toLowerCase().endsWith('.heic') || file.name?.toLowerCase().endsWith('.heif')) {
+        const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
+        processableFile = Array.isArray(converted) ? converted[0] : converted
       }
-      reader.onerror = () => callback(file, url)
-      reader.readAsDataURL(file)
-      URL.revokeObjectURL(url)
+      const url = URL.createObjectURL(processableFile)
+      const img = new Image()
+      img.onload = () => {
+        const MAX = 1600
+        let w = img.naturalWidth, h = img.naturalHeight
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        const ctx = canvas.getContext('2d')
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, w, h)
+        ctx.drawImage(img, 0, 0, w, h)
+        canvas.toBlob(blob => {
+          if (blob) callback(blob, URL.createObjectURL(blob))
+          URL.revokeObjectURL(url)
+        }, 'image/jpeg', 0.85)
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); callback(processableFile, URL.createObjectURL(processableFile)) }
+      img.src = url
+    } catch(err) {
+      console.error('processFile error:', err)
+      callback(file, URL.createObjectURL(file))
     }
-    img.src = url
   }
 
   function handlePhotoSelect(e) {

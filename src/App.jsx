@@ -119,7 +119,7 @@ export default function App() {
   }
 
   if (page === 'help') {
-    return <HelpPage onBack={() => setPage('dashboard')} />
+    return <HelpPage onBack={() => setPage('settings')} />
   }
 
   if (page === 'mytasks') {

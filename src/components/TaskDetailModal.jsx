@@ -407,7 +407,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 )}
               </div>
             </div>
-            {isOwner && !isCompleted && contractors.length > 0 && (
+            {!isCompleted && contractors.length > 0 && (
               <div className="bg-gray-50 rounded-xl p-3 col-span-2">
                 <p className="text-xs text-gray-400 mb-1">{lang === 'es' ? 'Asignado a' : 'Assigned to'}</p>
                 <select className="input text-sm py-1 w-full" value={assignedTo}

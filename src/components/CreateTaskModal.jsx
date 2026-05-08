@@ -22,10 +22,17 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
   useEffect(() => { loadContractors() }, [])
 
   async function loadContractors() {
-    const { data } = await supabase.from('property_contractors')
+    const { data: propData } = await supabase.from('properties')
+      .select('owner_id, profiles!properties_owner_id_fkey(id, name)')
+      .eq('id', propertyId).single()
+    const { data: contractorData } = await supabase.from('property_contractors')
       .select('contractor_id, profiles(id, name)')
       .eq('property_id', propertyId)
-    setContractors((data || []).map(r => r.profiles).filter(Boolean))
+    const all = (contractorData || []).map(r => r.profiles).filter(Boolean)
+    if (propData?.profiles && !all.find(p => p.id === propData.profiles.id)) {
+      all.unshift(propData.profiles)
+    }
+    setContractors(all)
   }
 
   const cameraInput = useRef(null)

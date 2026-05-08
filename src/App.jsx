@@ -7,6 +7,7 @@ import AvatarCropModal from './components/AvatarCropModal'
 import { useState, useRef } from 'react'
 import NotificationsPage from './pages/NotificationsPage'
 import MyTasksPage from './pages/MyTasksPage'
+import HelpPage from './pages/HelpPage'
 import WorkLogPage from './pages/WorkLogPage'
 import { supabase } from './lib/supabase'
 import { subscribeToPush } from './lib/push'
@@ -117,6 +118,10 @@ export default function App() {
     return <PhotoRequiredScreen />
   }
 
+  if (page === 'help') {
+    return <HelpPage onBack={() => setPage('dashboard')} />
+  }
+
   if (page === 'mytasks') {
     return <MyTasksPage onBack={() => setPage('dashboard')} />
   }
@@ -161,7 +166,7 @@ export default function App() {
   return (
     <Dashboard
       onOpenProperty={p => { setActiveProperty(p); setPage('property') }}
-      onOpenSettings={() => setPage('settings')} onOpenNotifications={() => setPage('notifications')} onOpenMyTasks={() => setPage('mytasks')}
+      onOpenSettings={() => setPage('settings')} onOpenNotifications={() => setPage('notifications')} onOpenMyTasks={() => setPage('mytasks')} onOpenHelp={() => setPage('help')}
     />
   )
 }

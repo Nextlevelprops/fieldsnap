@@ -6,7 +6,7 @@ import PropertyCard from '../components/PropertyCard'
 import AddPropertyModal from '../components/AddPropertyModal'
 import NotificationBell from '../components/NotificationBell'
 
-export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifications, onOpenMyTasks }) {
+export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifications, onOpenMyTasks, onOpenHelp }) {
   const { profile, lang } = useApp()
   const [tab, setTab]               = useState('active')
   const [properties, setProperties] = useState([])
@@ -49,6 +49,9 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
         <div className="flex items-center justify-between px-4 py-2">
           <img src="/logo.png" alt="FieldSnap" className="h-12 object-contain" />
           <div className="flex items-center gap-3">
+            <button onClick={onOpenHelp} className="relative w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center active:scale-95">
+              <span className="text-lg">❓</span>
+            </button>
             <NotificationBell onOpen={() => onOpenNotifications()} />
             <button onClick={onOpenMyTasks} className="relative w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center active:scale-95">
               <span className="text-lg">📋</span>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import heic2any from 'heic2any'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { getBilingualText, getTextPairForLang } from '../lib/translate'
@@ -62,9 +63,20 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   }
 
   async function processAndUploadPhoto(file, type) {
+    console.log("Upload:", file.type, file.name, file.size)
+    let processableFile = file
+    try {
+      if (file.type === 'image/heic' || file.type === 'image/heif' ||
+          (file.name && (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')))) {
+        console.log("Converting HEIC...")
+        const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 })
+        processableFile = Array.isArray(converted) ? converted[0] : converted
+        console.log("HEIC converted:", processableFile.type, processableFile.size)
+      }
+    } catch(e) { console.error('HEIC conversion failed:', e) }
+
     const blob = await new Promise(resolve => {
-      // Create object URL to load image regardless of format (HEIC, JPEG, PNG, etc)
-      const objectUrl = URL.createObjectURL(file)
+      const objectUrl = URL.createObjectURL(processableFile)
       const img = new Image()
       img.onload = () => {
         const MAX = 1600
@@ -76,35 +88,9 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
         ctx.fillStyle = '#ffffff'
         ctx.fillRect(0, 0, w, h)
         ctx.drawImage(img, 0, 0, w, h)
-        canvas.toBlob(b => {
-          URL.revokeObjectURL(objectUrl)
-          resolve(b || file)
-        }, 'image/jpeg', 0.85)
+        canvas.toBlob(b => { URL.revokeObjectURL(objectUrl); resolve(b || processableFile) }, 'image/jpeg', 0.85)
       }
-      img.onerror = () => {
-        // Fallback: read as data URL
-        URL.revokeObjectURL(objectUrl)
-        const reader = new FileReader()
-        reader.onload = ev => {
-          const img2 = new Image()
-          img2.onload = () => {
-            const MAX = 1600
-            let w = img2.naturalWidth, h = img2.naturalHeight
-            if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
-            const canvas = document.createElement('canvas')
-            canvas.width = w; canvas.height = h
-            const ctx = canvas.getContext('2d')
-            ctx.fillStyle = '#ffffff'
-            ctx.fillRect(0, 0, w, h)
-            ctx.drawImage(img2, 0, 0, w, h)
-            canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85)
-          }
-          img2.onerror = () => resolve(file)
-          img2.src = ev.target.result
-        }
-        reader.onerror = () => resolve(file)
-        reader.readAsDataURL(file)
-      }
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(processableFile) }
       img.src = objectUrl
     })
     const path = `tasks/${task.id}/${type}_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`

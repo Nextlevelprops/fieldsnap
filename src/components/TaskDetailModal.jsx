@@ -84,7 +84,11 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
         processableFile = new File([jpegBlob], 'converted.jpg', { type: 'image/jpeg' })
         console.log("HEIC converted successfully:", processableFile.size)
       }
-    } catch(e) { console.error('HEIC conversion failed:', e) }
+    } catch(e) {
+      console.error('HEIC conversion failed:', e)
+      alert('HEIC photos cannot be uploaded directly from Mac Photos. Right-click the photo in Photos → Export → Export 1 Photo → change format to JPEG, then drag the exported file.')
+      return
+    }
 
     const blob = await new Promise(resolve => {
       const objectUrl = URL.createObjectURL(processableFile)

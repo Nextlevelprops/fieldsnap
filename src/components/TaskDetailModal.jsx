@@ -321,16 +321,24 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Antes' : 'Before Photos'} ({beforePhotos.length > 0 ? beforePhotos.length : 1}/5)</p>
-                {!isCompleted && (beforePhotos.length < 5) && (
-                  <button onClick={() => setShowPhotoChoice('before')} disabled={uploadingPhoto}
-                    className="text-xs text-brand-600 font-semibold">
-                    + {lang === 'es' ? 'Agregar' : 'Add'}
-                  </button>
-                )}
+
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1"
                 onDragOver={isDesktop ? e => e.preventDefault() : undefined}
                 onDrop={isDesktop && !isCompleted ? e => handleDropPhoto(e, 'before') : undefined}>
+                {!isCompleted && beforePhotos.length < 5 && (
+                  <div
+                    onClick={() => setShowPhotoChoice('before')}
+                    onDragOver={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background='#eff6ff' } : undefined}
+                    onDragLeave={isDesktop ? e => { e.currentTarget.style.background='' } : undefined}
+                    onDrop={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background=''; handleDropPhoto(e, 'before') } : undefined}
+                    className="h-32 w-32 flex-shrink-0 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-colors">
+                    <span className="text-2xl">📷</span>
+                    <span className="text-xs text-brand-500 font-medium text-center px-1">
+                      {isDesktop ? (lang === 'es' ? 'Arrastra o toca' : 'Drag or tap') : (lang === 'es' ? 'Agregar foto' : 'Add photo')}
+                    </span>
+                  </div>
+                )}
                 {task.photo_url && (
                   <div className="relative flex-shrink-0">
                     <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => { const all = [task.photo_url, ...beforePhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />
@@ -465,16 +473,24 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold text-gray-400">{lang === 'es' ? 'Fotos Después' : 'After Photos'} ({afterPhotos.length > 0 ? afterPhotos.length : 1}/5)</p>
-                {isCompleted && afterPhotos.length < 5 && (
-                  <button onClick={() => setShowPhotoChoice('after')} disabled={uploadingPhoto}
-                    className="text-xs text-brand-600 font-semibold">
-                    + {lang === 'es' ? 'Agregar' : 'Add'}
-                  </button>
-                )}
+
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1"
                 onDragOver={isDesktop ? e => e.preventDefault() : undefined}
                 onDrop={isDesktop ? e => handleDropPhoto(e, 'after') : undefined}>
+                {afterPhotos.length < 5 && (
+                  <div
+                    onClick={() => setShowPhotoChoice('after')}
+                    onDragOver={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background='#eff6ff' } : undefined}
+                    onDragLeave={isDesktop ? e => { e.currentTarget.style.background='' } : undefined}
+                    onDrop={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background=''; handleDropPhoto(e, 'after') } : undefined}
+                    className="h-32 w-32 flex-shrink-0 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-colors">
+                    <span className="text-2xl">📷</span>
+                    <span className="text-xs text-brand-500 font-medium text-center px-1">
+                      {isDesktop ? (lang === 'es' ? 'Arrastra o toca' : 'Drag or tap') : (lang === 'es' ? 'Agregar foto' : 'Add photo')}
+                    </span>
+                  </div>
+                )}
                 {task.completion_photo_url && (
                   <div className="relative flex-shrink-0">
                     <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="after" onClick={() => { const all = [task.completion_photo_url, ...afterPhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />

@@ -249,7 +249,7 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
         {contractors.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">{lang === 'es' ? 'Asignar a' : 'Assign to'}</label>
-            <select className="input" value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
+            <select className="input h-11" value={assignedTo} onChange={e => setAssignedTo(e.target.value)}>
               <option value="">{lang === 'es' ? 'Sin asignar' : 'Unassigned'}</option>
               {contractors.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>

@@ -9,7 +9,7 @@ export default function Modal({ title, onClose, children }) {
           <h2 className="font-bold text-gray-800 text-base">{title}</h2>
           <button onClick={onClose} className="text-gray-400 text-xl w-8 h-8 flex items-center justify-center active:scale-95">✕</button>
         </div>
-        <div className="overflow-y-auto flex-1 px-5 py-4">{children}</div>
+        <div className="overflow-y-auto flex-1 px-5 py-4" onDragOver={e => e.preventDefault()} onDrop={e => e.preventDefault()}>{children}</div>
       </div>
     </div>
   )

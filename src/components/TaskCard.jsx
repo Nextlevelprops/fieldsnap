@@ -56,14 +56,14 @@ export default function TaskCard({ task, lang: langProp, onTap }) {
             <img src={task.photo_url}
               className="w-full rounded-xl"
               style={{ maxHeight: '200px', objectFit: 'contain', background: '#f3f4f6' }}
-              alt="before" />
+              alt="before" onError={e => e.currentTarget.style.display='none'} />
           </div>
           <div className="flex-1">
             <p className="text-xs font-semibold text-green-500 mb-1">{lang === 'es' ? 'Después' : 'After'}</p>
             <img src={task.completion_photo_url}
               className="w-full rounded-xl"
               style={{ maxHeight: '200px', objectFit: 'contain', background: '#f3f4f6' }}
-              alt="after" />
+              alt="after" onError={e => e.currentTarget.style.display='none'} />
           </div>
         </div>
       )}
@@ -73,7 +73,7 @@ export default function TaskCard({ task, lang: langProp, onTap }) {
         <img src={task.photo_url}
           className="w-full rounded-xl mb-2"
           style={{ maxHeight: '260px', objectFit: 'contain', background: '#f3f4f6' }}
-          alt="task" />
+          alt="task" onError={e => e.currentTarget.style.display='none'} />
       )}
 
       {/* Single completion photo */}
@@ -81,7 +81,7 @@ export default function TaskCard({ task, lang: langProp, onTap }) {
         <img src={task.completion_photo_url}
           className="w-full rounded-xl mb-2"
           style={{ maxHeight: '260px', objectFit: 'contain', background: '#f3f4f6' }}
-          alt="completion" />
+          alt="completion" onError={e => e.currentTarget.style.display='none'} />
       )}
 
       {/* Creator and date */}

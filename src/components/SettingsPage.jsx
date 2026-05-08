@@ -104,19 +104,23 @@ export default function SettingsPage({ onBack, onOpenWorkLog }) {
 
   async function toJpeg(file) {
     return new Promise(resolve => {
-      const url = URL.createObjectURL(file)
-      const img = new Image()
-      img.onload = () => {
-        const MAX = 1600
-        let w = img.naturalWidth, h = img.naturalHeight
-        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
-        const canvas = document.createElement('canvas')
-        canvas.width = w; canvas.height = h
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-        canvas.toBlob(blob => { URL.revokeObjectURL(url); resolve(blob || file) }, 'image/jpeg', 0.9)
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const img = new Image()
+        img.onload = () => {
+          const MAX = 1600
+          let w = img.naturalWidth, h = img.naturalHeight
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', 0.9)
+        }
+        img.onerror = () => resolve(file)
+        img.src = ev.target.result
       }
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(file) }
-      img.src = url
+      reader.onerror = () => resolve(file)
+      reader.readAsDataURL(file)
     })
   }
 

@@ -137,25 +137,36 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
     setCommentText(''); setSaving(false)
   }
 
+  function processCompFile(file, callback) {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      const MAX = 1600
+      let w = img.naturalWidth, h = img.naturalHeight
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+      const canvas = document.createElement('canvas')
+      canvas.width = w; canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      canvas.toBlob(blob => {
+        if (blob) callback(blob, URL.createObjectURL(blob))
+        URL.revokeObjectURL(url)
+      }, 'image/jpeg', 0.85)
+    }
+    img.onerror = () => callback(file, url)
+    img.src = url
+  }
+
   function handlePhotoSelect(e) {
     const files = Array.from(e.target.files || [])
+    e.target.value = ''
     if (!files.length) return
     const remaining = 5 - compPhotos.length
-    if (files.length > remaining) {
-      alert(lang === 'es' ? `Solo puedes agregar ${remaining} foto(s) más` : `You can only add ${remaining} more photo(s)`)
-    }
     const toAdd = files.slice(0, remaining)
     toAdd.forEach(file => {
-      const url = URL.createObjectURL(file)
-      setCompPhotos(prev => prev.length < 5 ? [...prev, { file, preview: url }] : prev)
+      processCompFile(file, (blob, preview) => {
+        setCompPhotos(prev => prev.length < 5 ? [...prev, { file: blob, preview }] : prev)
+      })
     })
-    // Keep first photo for legacy compPreview
-    if (toAdd.length > 0 && compPhotos.length === 0) {
-      setCompPhoto(toAdd[0])
-      const reader = new FileReader()
-      reader.onload = ev => setCompPreview(ev.target.result)
-      reader.readAsDataURL(toAdd[0])
-    }
   }
 
   async function handleComplete() {
@@ -409,7 +420,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                       📷 {lang === 'es' ? 'Agregar foto' : 'Add Photo'}
                     </button>
                   )}
-                  <input ref={compCameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoSelect} />
+                  <input ref={compCameraInput} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
                   
                   <input ref={compGalleryInput} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />
                   {showCompPhotoChoice && (

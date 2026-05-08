@@ -325,21 +325,8 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1"
                 onDragOver={isDesktop ? e => e.preventDefault() : undefined}
-                onDrop={isDesktop && !isCompleted ? e => handleDropPhoto(e, 'before') : undefined}>
-                {!isCompleted && beforePhotos.length < 5 && (
-                  <div
-                    onClick={() => setShowPhotoChoice('before')}
-                    onDragOver={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background='#eff6ff' } : undefined}
-                    onDragLeave={isDesktop ? e => { e.currentTarget.style.background='' } : undefined}
-                    onDrop={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background=''; handleDropPhoto(e, 'before') } : undefined}
-                    className="h-32 w-32 flex-shrink-0 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-colors">
-                    <span className="text-2xl">📷</span>
-                    <span className="text-xs text-brand-500 font-medium text-center px-1">
-                      {isDesktop ? (lang === 'es' ? 'Arrastra o toca' : 'Drag or tap') : (lang === 'es' ? 'Agregar foto' : 'Add photo')}
-                    </span>
-                  </div>
-                )}
-                {task.photo_url && (
+                onDrop={undefined}>
+{task.photo_url && (
                   <div className="relative flex-shrink-0">
                     <img src={task.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => { const all = [task.photo_url, ...beforePhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />
                     {!isCompleted && (
@@ -351,7 +338,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                     )}
                   </div>
                 )}
-                {beforePhotos.map(p => (
+{beforePhotos.map(p => (
                   <div key={p.id} className="relative flex-shrink-0">
                     <img src={p.photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="before" onClick={() => { const all = [task.photo_url, ...beforePhotos.map(x=>x.photo_url)].filter(Boolean); openGallery(all, all.indexOf(p.photo_url)) }} />
                     {!isCompleted && (
@@ -363,6 +350,19 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                     )}
                   </div>
                 ))}
+                {!isCompleted && beforePhotos.length < 5 && (
+                  <div
+                    onClick={() => setShowPhotoChoice('before')}
+                    onDragOver={isDesktop ? e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.style.background='#eff6ff' } : undefined}
+                    onDragLeave={isDesktop ? e => { e.currentTarget.style.background='' } : undefined}
+                    onDrop={isDesktop ? e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.style.background=''; handleDropPhoto(e, 'before') } : undefined}
+                    className="h-32 w-32 flex-shrink-0 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-colors">
+                    <span className="text-2xl">📷</span>
+                    <span className="text-xs text-brand-500 font-medium text-center px-1">
+                      {isDesktop ? (lang === 'es' ? 'Arrastra o toca' : 'Drag or tap') : (lang === 'es' ? 'Agregar foto' : 'Add photo')}
+                    </span>
+                  </div>
+                )}
               </div>
               <input ref={beforeInput} type="file" accept="image/*" className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
               <input ref={beforeGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'before')} />
@@ -477,21 +477,8 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1"
                 onDragOver={isDesktop ? e => e.preventDefault() : undefined}
-                onDrop={isDesktop ? e => handleDropPhoto(e, 'after') : undefined}>
-                {afterPhotos.length < 5 && (
-                  <div
-                    onClick={() => setShowPhotoChoice('after')}
-                    onDragOver={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background='#eff6ff' } : undefined}
-                    onDragLeave={isDesktop ? e => { e.currentTarget.style.background='' } : undefined}
-                    onDrop={isDesktop ? e => { e.preventDefault(); e.currentTarget.style.background=''; handleDropPhoto(e, 'after') } : undefined}
-                    className="h-32 w-32 flex-shrink-0 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-colors">
-                    <span className="text-2xl">📷</span>
-                    <span className="text-xs text-brand-500 font-medium text-center px-1">
-                      {isDesktop ? (lang === 'es' ? 'Arrastra o toca' : 'Drag or tap') : (lang === 'es' ? 'Agregar foto' : 'Add photo')}
-                    </span>
-                  </div>
-                )}
-                {task.completion_photo_url && (
+                onDrop={undefined}>
+{task.completion_photo_url && (
                   <div className="relative flex-shrink-0">
                     <img src={task.completion_photo_url} className="h-32 w-32 object-cover rounded-xl cursor-pointer" alt="after" onClick={() => { const all = [task.completion_photo_url, ...afterPhotos.map(p=>p.photo_url)].filter(Boolean); openGallery(all, 0) }} />
                     <button onClick={async () => {
@@ -511,6 +498,19 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                     }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">✕</button>
                   </div>
                 ))}
+                {afterPhotos.length < 5 && (
+                  <div
+                    onClick={() => setShowPhotoChoice('after')}
+                    onDragOver={isDesktop ? e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.style.background='#eff6ff' } : undefined}
+                    onDragLeave={isDesktop ? e => { e.currentTarget.style.background='' } : undefined}
+                    onDrop={isDesktop ? e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.style.background=''; handleDropPhoto(e, 'after') } : undefined}
+                    className="h-32 w-32 flex-shrink-0 border-2 border-dashed border-brand-300 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-colors">
+                    <span className="text-2xl">📷</span>
+                    <span className="text-xs text-brand-500 font-medium text-center px-1">
+                      {isDesktop ? (lang === 'es' ? 'Arrastra o toca' : 'Drag or tap') : (lang === 'es' ? 'Agregar foto' : 'Add photo')}
+                    </span>
+                  </div>
+                )}
               </div>
               <input ref={afterInput} type="file" accept="image/*" className="hidden" onChange={e => handleAddPhoto(e, 'after')} />
               <input ref={afterGallery} type="file" accept="image/*" multiple className="hidden" onChange={e => handleAddPhoto(e, 'after')} />

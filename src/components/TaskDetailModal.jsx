@@ -61,37 +61,44 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
     setAfterPhotos((data||[]).filter(p => p.type === 'after'))
   }
 
+  async function processAndUploadPhoto(file, type) {
+    const blob = await new Promise(resolve => {
+      const reader = new FileReader()
+      reader.onload = ev => {
+        const img = new Image()
+        img.onload = () => {
+          const MAX = 1600
+          let w = img.naturalWidth, h = img.naturalHeight
+          if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85)
+        }
+        img.onerror = () => resolve(file)
+        img.src = ev.target.result
+      }
+      reader.onerror = () => resolve(file)
+      reader.readAsDataURL(file)
+    })
+    const path = `tasks/${task.id}/${type}_${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
+    const { error } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+    if (error) throw error
+    const { data: urlData } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
+    await supabase.from('task_photos').insert({ task_id: task.id, photo_url: urlData.publicUrl, type })
+  }
+
   async function handleAddPhoto(e, type) {
-    const file = e.target.files?.[0]; if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
     e.target.value = ''
     const current = type === 'before' ? beforePhotos : afterPhotos
-    if (current.length >= 5) { alert(lang === 'es' ? 'Máximo 5 fotos' : 'Maximum 5 photos'); return }
+    const remaining = 5 - current.length
+    if (remaining <= 0) { alert(lang === 'es' ? 'Máximo 5 fotos' : 'Maximum 5 photos'); return }
+    const toUpload = files.slice(0, remaining)
     setUploadingPhoto(true)
     try {
-      const blob = await new Promise(resolve => {
-        const reader = new FileReader()
-        reader.onload = ev => {
-          const img = new Image()
-          img.onload = () => {
-            const MAX = 1600
-            let w = img.naturalWidth, h = img.naturalHeight
-            if (w > MAX) { h = Math.round(h * MAX / w); w = MAX }
-            const canvas = document.createElement('canvas')
-            canvas.width = w; canvas.height = h
-            canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-            canvas.toBlob(b => resolve(b || file), 'image/jpeg', 0.85)
-          }
-          img.onerror = () => resolve(file)
-          img.src = ev.target.result
-        }
-        reader.onerror = () => resolve(file)
-        reader.readAsDataURL(file)
-      })
-      const path = `tasks/${task.id}/${type}_${Date.now()}.jpg`
-      const { error } = await supabase.storage.from('fieldsnap-uploads').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
-      if (error) throw error
-      const { data: urlData } = supabase.storage.from('fieldsnap-uploads').getPublicUrl(path)
-      await supabase.from('task_photos').insert({ task_id: task.id, photo_url: urlData.publicUrl, type })
+      await Promise.all(toUpload.map(file => processAndUploadPhoto(file, type)))
       loadTaskPhotos()
     } catch(err) { alert(err.message) }
     setUploadingPhoto(false)

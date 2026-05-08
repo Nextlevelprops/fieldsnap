@@ -100,7 +100,6 @@ export default function App() {
   const [page, setPage]             = useState('dashboard')
   const [activeProperty, setActiveProperty] = useState(null)
   const [notifTask, setNotifTask] = useState(null)
-  const [page, setPageState] = useState('dashboard')
 
   // Still loading auth state
   if (session === undefined || (session && profile === undefined)) {

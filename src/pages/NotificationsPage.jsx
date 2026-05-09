@@ -17,7 +17,7 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
             .eq('id', n.comment_id).single()
           mentioner = comment?.profiles?.name
         }
-        if (n.type === 'access_request' && n.property_id) {
+        if ((n.type === 'access_request' || n.type === 'access_approved' || n.type === 'access_denied') && n.property_id) {
           const { data: prop } = await supabase.from('properties')
             .select('street, name').eq('id', n.property_id).single()
           propertyName = prop?.name || prop?.street

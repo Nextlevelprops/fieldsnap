@@ -74,6 +74,14 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
           })
         }
 
+        // Insert bell notification for contractor
+        await supabase.from('notifications').insert({
+          user_id: req.contractor_id,
+          type: action === 'approved' ? 'access_approved' : 'access_denied',
+          property_id: req.property_id,
+          read: false
+        })
+
         // Send push notification to contractor
         const { data: sessionData } = await supabase.auth.getSession()
         const session = sessionData?.session
@@ -131,7 +139,7 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
           <div key={n.id} onClick={() => handleClick(n)}
             className={`flex items-start gap-3 px-4 py-4 cursor-pointer active:bg-gray-100 ${n.read ? 'bg-white' : 'bg-blue-50'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${n.read ? 'bg-gray-100' : 'bg-brand-100'}`}>
-              <span className="text-lg">{n.type === 'access_request' ? '🔑' : '💬'}</span>
+              <span className="text-lg">{n.type === 'access_request' ? '🔑' : n.type === 'access_approved' ? '✅' : n.type === 'access_denied' ? '❌' : '💬'}</span>
             </div>
             <div className="flex-1">
               <p className={`text-sm font-medium ${n.read ? 'text-gray-400' : 'text-gray-800'}`}>
@@ -139,6 +147,10 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
                   ? (lang === 'es'
                     ? `${n.requesterName || 'Alguien'} solicita acceso a ${n.propertyName || 'una propiedad'}`
                     : `${n.requesterName || 'Someone'} is requesting access to ${n.propertyName || 'a property'}`)
+                  : n.type === 'access_approved'
+                    ? (lang === 'es' ? `✓ Acceso aprobado a ${n.propertyName || 'una propiedad'}` : `✓ Access approved to ${n.propertyName || 'a property'}`)
+                  : n.type === 'access_denied'
+                    ? (lang === 'es' ? `✕ Acceso denegado a ${n.propertyName || 'una propiedad'}` : `✕ Access denied to ${n.propertyName || 'a property'}`)
                   : n.mentioner
                     ? (lang === 'es' ? `${n.mentioner} te mencionó` : `${n.mentioner} mentioned you`)
                     : (lang === 'es' ? 'Te mencionaron en una tarea' : 'You were mentioned in a task')}

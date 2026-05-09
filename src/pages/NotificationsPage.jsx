@@ -56,62 +56,72 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
   }
 
   async function handleAccessRequest(n, action) {
-    if (!n.request_id) return
+    if (!n.request_id || !n.property_id) {
+      console.error('Missing request_id or property_id', n)
+      return
+    }
     try {
-      // Update request status
-      await supabase.from('access_requests').update({ status: action }).eq('id', n.request_id)
+      console.log('handleAccessRequest:', action, n.request_id)
 
-      // Get request details
-      const { data: req } = await supabase.from('access_requests')
+      // 1. Update request status
+      const { error: updateErr } = await supabase.from('access_requests')
+        .update({ status: action }).eq('id', n.request_id)
+      if (updateErr) { console.error('update error:', updateErr); throw updateErr }
+
+      // 2. Get contractor_id from the request
+      const { data: req, error: reqErr } = await supabase.from('access_requests')
         .select('contractor_id, property_id').eq('id', n.request_id).single()
+      console.log('req:', req, 'reqErr:', reqErr)
+      if (reqErr) throw reqErr
 
-      if (req) {
-        if (action === 'approved') {
-          // Add contractor to property
-          await supabase.from('property_contractors').upsert({
-            contractor_id: req.contractor_id,
-            property_id: req.property_id
-          })
-        }
+      const contractorId = req?.contractor_id
+      const propertyId = req?.property_id || n.property_id
+      if (!contractorId) throw new Error('Could not find contractor_id')
 
-        // Insert bell notification for contractor
-        await supabase.from('notifications').insert({
-          user_id: req.contractor_id,
-          type: action === 'approved' ? 'access_approved' : 'access_denied',
-          property_id: req.property_id,
-          read: false
+      // 3. If approved, add to property_contractors
+      if (action === 'approved') {
+        const { error: pcErr } = await supabase.from('property_contractors').upsert({
+          contractor_id: contractorId,
+          property_id: propertyId
         })
-
-        // Send push notification to contractor
-        const { data: sessionData } = await supabase.auth.getSession()
-        const session = sessionData?.session
-        if (session) {
-          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({
-              user_id: req.contractor_id,
-              title: action === 'approved'
-                ? (lang === 'es' ? 'Acceso aprobado ✓' : 'Access Approved ✓')
-                : (lang === 'es' ? 'Acceso denegado' : 'Access Denied'),
-              body: action === 'approved'
-                ? (lang === 'es' ? 'Tu solicitud de acceso fue aprobada' : 'Your access request has been approved')
-                : (lang === 'es' ? 'Tu solicitud de acceso fue denegada' : 'Your access request was denied'),
-              url: '/'
-            })
-          })
-        }
+        if (pcErr) console.error('property_contractors error:', pcErr)
       }
+
+      // 4. Insert bell notification for contractor
+      const { error: notifErr } = await supabase.from('notifications').insert({
+        user_id: contractorId,
+        type: action === 'approved' ? 'access_approved' : 'access_denied',
+        property_id: propertyId,
+        read: false
+      })
+      console.log('notif insert error:', notifErr)
+
+      // 5. Send push notification
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData?.session?.access_token
+      if (token) {
+        const pushResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-notification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            user_id: contractorId,
+            title: action === 'approved' ? 'Access Approved ✓' : 'Access Denied',
+            body: action === 'approved'
+              ? 'Your access request has been approved'
+              : 'Your access request was denied',
+            url: '/'
+          })
+        })
+        console.log('push resp:', pushResp.status)
+      }
+
+      await markNotificationRead(n.id)
+      setEnriched(prev => prev.map(e => e.id === n.id ? { ...e, resolved: true } : e))
+      alert(action === 'approved' ? 'Contractor approved!' : 'Contractor denied.')
     } catch(err) {
       console.error('handleAccessRequest error:', err)
-      alert(err.message)
+      alert('Error: ' + err.message)
     }
-
-    await markNotificationRead(n.id)
-    setEnriched(prev => prev.map(e => e.id === n.id ? { ...e, resolved: true } : e))
   }
 
   async function markAllRead() {

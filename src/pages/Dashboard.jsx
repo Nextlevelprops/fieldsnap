@@ -51,11 +51,6 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
         <div className="flex items-center justify-between px-4 py-2">
           <img src="/logo.png" alt="FieldSnap" className="h-12 object-contain" />
           <div className="flex items-center gap-3">
-            {!isOwner && (
-            <button onClick={() => setShowRequestAccess(true)} className="relative w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center active:scale-95">
-              <span className="text-lg">🔑</span>
-            </button>
-          )}
           <NotificationBell onOpen={() => onOpenNotifications()} />
             <button onClick={onOpenMyTasks} className="relative w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center active:scale-95">
               <span className="text-lg">📋</span>
@@ -108,6 +103,10 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
       {isOwner && tab === 'active' && (
         <button onClick={() => setShowAdd(true)}
           className="fixed bottom-6 right-6 w-14 h-14 bg-accent-500 rounded-full shadow-xl flex items-center justify-center text-white text-2xl active:scale-95 transition-all z-30">+</button>
+      )}
+      {!isOwner && (
+        <button onClick={() => setShowRequestAccess(true)}
+          className="fixed bottom-6 left-6 w-14 h-14 bg-brand-600 rounded-full shadow-xl flex items-center justify-center text-2xl active:scale-95 z-30">🔑</button>
       )}
       {showAdd && <AddPropertyModal onClose={() => setShowAdd(false)} onCreated={() => { setShowAdd(false); loadProperties() }} />}
     </div>

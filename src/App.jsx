@@ -104,6 +104,7 @@ export default function App() {
 
   // Handle deep links from push notifications
   useEffect(() => {
+    if (session === undefined || session === null) return
     const path = window.location.pathname
     const taskMatch = path.match(/^\/task\/([a-f0-9-]+)$/)
     if (taskMatch && session) {
@@ -129,7 +130,7 @@ export default function App() {
       setPage('worklog')
       window.history.replaceState({}, '', '/')
     }
-  }, [session])
+  }, [session?.user?.id])
 
   // Still loading auth state
   if (session === undefined || (session && profile === undefined)) {

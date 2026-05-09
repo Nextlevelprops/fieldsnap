@@ -109,6 +109,7 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
           className="fixed bottom-6 left-6 w-14 h-14 bg-brand-600 rounded-full shadow-xl flex items-center justify-center text-2xl active:scale-95 z-30">🔑</button>
       )}
       {showAdd && <AddPropertyModal onClose={() => setShowAdd(false)} onCreated={() => { setShowAdd(false); loadProperties() }} />}
+      {showRequestAccess && <RequestAccessModal onClose={() => setShowRequestAccess(false)} />}
     </div>
   )
 }

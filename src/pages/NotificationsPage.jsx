@@ -117,7 +117,6 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
 
       await markNotificationRead(n.id)
       setEnriched(prev => prev.map(e => e.id === n.id ? { ...e, resolved: true } : e))
-      alert(action === 'approved' ? 'Contractor approved!' : 'Contractor denied.')
     } catch(err) {
       console.error('handleAccessRequest error:', err)
       alert('Error: ' + err.message)

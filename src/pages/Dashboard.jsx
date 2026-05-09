@@ -5,6 +5,7 @@ import { t } from '../lib/i18n'
 import PropertyCard from '../components/PropertyCard'
 import AddPropertyModal from '../components/AddPropertyModal'
 import NotificationBell from '../components/NotificationBell'
+import RequestAccessModal from '../components/RequestAccessModal'
 
 export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifications, onOpenMyTasks }) {
   const { profile, lang } = useApp()
@@ -12,6 +13,7 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
   const [properties, setProperties] = useState([])
   const [loading, setLoading]       = useState(true)
   const [showAdd, setShowAdd]       = useState(false)
+  const [showRequestAccess, setShowRequestAccess] = useState(false)
   const [myTaskCount, setMyTaskCount] = useState(0)
   const isOwner = profile?.role === 'owner'
 
@@ -49,7 +51,12 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
         <div className="flex items-center justify-between px-4 py-2">
           <img src="/logo.png" alt="FieldSnap" className="h-12 object-contain" />
           <div className="flex items-center gap-3">
-            <NotificationBell onOpen={() => onOpenNotifications()} />
+            {!isOwner && (
+            <button onClick={() => setShowRequestAccess(true)} className="relative w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center active:scale-95">
+              <span className="text-lg">🔑</span>
+            </button>
+          )}
+          <NotificationBell onOpen={() => onOpenNotifications()} />
             <button onClick={onOpenMyTasks} className="relative w-10 h-10 bg-brand-600 rounded-full flex items-center justify-center active:scale-95">
               <span className="text-lg">📋</span>
               {myTaskCount > 0 && (
@@ -89,6 +96,7 @@ export default function Dashboard({ onOpenProperty, onOpenSettings, onOpenNotifi
             <div className="text-5xl mb-4">🏠</div>
             <p className="text-gray-500 font-medium">{t('dashboard.noProperties', lang)}</p>
             {isOwner && <p className="text-gray-400 text-sm mt-1">{t('dashboard.tapToAdd', lang)}</p>}
+            {!isOwner && <button onClick={() => setShowRequestAccess(true)} className="btn-primary mt-4">{lang === 'es' ? 'Solicitar acceso a una propiedad' : 'Request property access'}</button>}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

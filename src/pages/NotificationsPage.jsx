@@ -4,7 +4,7 @@ import { formatDateTime } from '../lib/i18n'
 import { useState, useEffect } from 'react'
 
 export default function NotificationsPage({ onBack, onOpenTask }) {
-  const { notifications, markNotificationRead, lang } = useApp()
+  const { notifications, markNotificationRead, lang, loadNotifications } = useApp()
   const [enriched, setEnriched] = useState([])
 
   useEffect(() => {
@@ -135,9 +135,12 @@ export default function NotificationsPage({ onBack, onOpenTask }) {
       <div className="bg-brand-700 px-4 py-3 flex items-center justify-between">
         <button onClick={onBack} className="text-white text-xl active:scale-95">←</button>
         <h1 className="text-white font-bold text-lg">{lang === 'es' ? 'Notificaciones' : 'Notifications'}</h1>
-        <button onClick={markAllRead} className="text-brand-200 text-xs font-medium">
-          {lang === 'es' ? 'Marcar todo' : 'Mark all read'}
-        </button>
+        <div className="flex gap-3">
+          <button onClick={() => { loadNotifications(); setEnriched([]) }} className="text-brand-200 text-xs font-medium">↺</button>
+          <button onClick={markAllRead} className="text-brand-200 text-xs font-medium">
+            {lang === 'es' ? 'Marcar todo' : 'Mark all read'}
+          </button>
+        </div>
       </div>
       <div className="divide-y divide-gray-100">
         {notifications.length === 0 ? (

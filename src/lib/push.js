@@ -26,12 +26,16 @@ export async function subscribeToPush(userId) {
 
   const { endpoint, keys: { p256dh, auth } } = sub.toJSON();
 
-  await supabase.from('push_subscriptions').upsert({
+  // Delete any existing subscription for this endpoint (handles account switching)
+  await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint)
+  
+  // Insert fresh subscription for current user
+  await supabase.from('push_subscriptions').insert({
     user_id: userId,
     endpoint,
     p256dh,
     auth,
-  }, { onConflict: 'endpoint' });
+  });
 }
 
 export async function sendPushNotification(userId, title, body, url = '/') {

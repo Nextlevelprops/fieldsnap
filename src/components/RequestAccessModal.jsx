@@ -48,7 +48,13 @@ export default function RequestAccessModal({ onClose }) {
   async function requestAccess(property) {
     setRequesting(prev => ({ ...prev, [property.id]: true }))
     try {
-      // Insert access request
+      // Delete any existing denied request first
+      await supabase.from('access_requests')
+        .delete()
+        .eq('contractor_id', profile.id)
+        .eq('property_id', property.id)
+        .eq('status', 'denied')
+      // Insert new access request
       const { data: req } = await supabase.from('access_requests').upsert({
         contractor_id: profile.id,
         property_id: property.id,
@@ -131,9 +137,14 @@ export default function RequestAccessModal({ onClose }) {
                     {lang === 'es' ? 'Aprobado' : 'Approved'}
                   </span>
                 ) : status === 'denied' ? (
-                  <span className="text-xs bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-full flex-shrink-0">
-                    {lang === 'es' ? 'Denegado' : 'Denied'}
-                  </span>
+                  <button
+                    onClick={() => requestAccess(p)}
+                    disabled={requesting[p.id]}
+                    className="text-xs bg-red-100 text-red-600 font-semibold px-3 py-1.5 rounded-full flex-shrink-0 active:scale-95">
+                    {requesting[p.id]
+                      ? (lang === 'es' ? 'Enviando...' : 'Sending...')
+                      : (lang === 'es' ? '↺ Solicitar de nuevo' : '↺ Request again')}
+                  </button>
                 ) : (
                   <button
                     onClick={() => requestAccess(p)}

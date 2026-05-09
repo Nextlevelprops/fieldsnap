@@ -36,7 +36,11 @@ export default function RequestAccessModal({ onClose }) {
 
     const myPropIds = new Set((myProps || []).map(p => p.property_id))
     const requestMap = {}
-    ;(myRequests || []).forEach(r => { requestMap[r.property_id] = r.status })
+    ;(myRequests || []).forEach(r => {
+      // Only show approved status if they still have access
+      if (r.status === 'approved' && !myPropIds.has(r.property_id)) return
+      requestMap[r.property_id] = r.status
+    })
     setRequested(requestMap)
 
     // Filter out properties already assigned to
@@ -134,7 +138,7 @@ export default function RequestAccessModal({ onClose }) {
                   </span>
                 ) : status === 'approved' ? (
                   <span className="text-xs bg-green-100 text-green-700 font-semibold px-3 py-1.5 rounded-full flex-shrink-0">
-                    {lang === 'es' ? 'Aprobado' : 'Approved'}
+                    {lang === 'es' ? 'Aprobado ✓' : 'Approved ✓'}
                   </span>
                 ) : status === 'denied' ? (
                   <button

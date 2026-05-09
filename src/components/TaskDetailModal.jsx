@@ -200,7 +200,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
       })
       if (mentioned && mentioned.id !== profile.id) {
         await supabase.from('notifications').insert({ user_id: mentioned.id, type:'mention', task_id: task.id, comment_id: comment?.id, read: false })
-        await sendPushNotification(mentioned.id, 'New Mention', `${profile.name} mentioned you in a comment`, '/').catch(console.error)
+        await sendPushNotification(mentioned.id, 'New Mention', `${profile.name} mentioned you in a comment`, `/task/${task.id}`).catch(console.error)
       }
     }
     setCommentText(''); setSaving(false)
@@ -262,7 +262,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
       // Notify owner on completion
       const { data: prop } = await supabase.from('properties').select('owner_id').eq('id', propertyId).single()
       if (prop?.owner_id && prop.owner_id !== profile.id) {
-        await sendPushNotification(prop.owner_id, 'Task Completed', `${profile.name} completed a task`, '/'). catch(console.error)
+        await sendPushNotification(prop.owner_id, 'Task Completed', `${profile.name} completed a task`, `/task/${task.id}`).catch(console.error)
       }
       onRefresh(); onClose()
     } catch (err) { alert(err.message) }

@@ -102,6 +102,35 @@ export default function App() {
   const [activeProperty, setActiveProperty] = useState(null)
   const [notifTask, setNotifTask] = useState(null)
 
+  // Handle deep links from push notifications
+  useEffect(() => {
+    const path = window.location.pathname
+    const taskMatch = path.match(/^\/task\/([a-f0-9-]+)$/)
+    if (taskMatch && session) {
+      const taskId = taskMatch[1]
+      supabase.from('tasks')
+        .select('*, creator:profiles!tasks_created_by_fkey(name,photo_url), completer:profiles!tasks_completed_by_fkey(name,photo_url)')
+        .eq('id', taskId).single()
+        .then(({ data: task }) => {
+          if (task) {
+            supabase.from('properties').select('*').eq('id', task.property_id).single()
+              .then(({ data: prop }) => {
+                if (prop) {
+                  setActiveProperty(prop)
+                  setNotifTask(task)
+                  setPage('property')
+                  window.history.replaceState({}, '', '/')
+                }
+              })
+          }
+        })
+    }
+    if (path === '/worklog' && session) {
+      setPage('worklog')
+      window.history.replaceState({}, '', '/')
+    }
+  }, [session])
+
   // Still loading auth state
   if (session === undefined || (session && profile === undefined)) {
     return (

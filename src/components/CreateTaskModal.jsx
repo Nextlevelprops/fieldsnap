@@ -160,7 +160,7 @@ export default function CreateTaskModal({ propertyId, lang, onClose, onCreated }
       // Notify contractors of new task
       const { data: cons } = await supabase.from('property_contractors').select('contractor_id').eq('property_id', propertyId)
       for (const c of (cons||[])) {
-        await sendPushNotification(c.contractor_id, 'New Task', 'A new task has been added to your property', '/').catch(console.error)
+        await sendPushNotification(c.contractor_id, 'New Task', 'A new task has been added to your property', `/task/${task.id}`).catch(console.error)
       }
       onCreated()
     } catch (err) {

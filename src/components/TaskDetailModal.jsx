@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import heic2any from 'heic2any'
+import UserProfileCard from './UserProfileCard'
 import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { getBilingualText, getTextPairForLang } from '../lib/translate'
@@ -39,6 +40,7 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
   const afterInput   = useRef(null)
   const afterGallery  = useRef(null)
   const [showPhotoChoice, setShowPhotoChoice] = useState(null) // 'before' or 'after'
+  const [viewingProfile, setViewingProfile] = useState(null)
 
   const [fullscreenPhoto, setFullscreenPhoto] = useState(null)
   const [fullscreenIndex, setFullscreenIndex] = useState(0)
@@ -745,8 +747,8 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
                 return (
                   <div key={c.id} className="flex gap-2">
                     {c.author?.photo_url
-                      ? <img src={c.author.photo_url} className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-0.5" alt="" />
-                      : <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-bold text-xs flex-shrink-0">{c.author?.name?.[0]}</div>
+                      ? <img src={c.author.photo_url} className="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-0.5 cursor-pointer active:scale-95" alt="" onClick={() => setViewingProfile(c.author)} />
+                      : <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-bold text-xs flex-shrink-0 cursor-pointer active:scale-95" onClick={() => setViewingProfile(c.author)}>{c.author?.name?.[0]}</div>
                     }
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-0.5">

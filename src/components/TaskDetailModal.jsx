@@ -281,66 +281,69 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
       <div
         className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
         onTouchStart={e => {
+          e.preventDefault()
           if (e.touches.length === 2) {
             const dx = e.touches[0].clientX - e.touches[1].clientX
             const dy = e.touches[0].clientY - e.touches[1].clientY
             touchStartX._pinchDist = Math.sqrt(dx*dx + dy*dy)
-            touchStartX._scale = touchStartX._currentScale || 1
-            touchStartX._midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
-            touchStartX._midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+            touchStartX._pinchScale = touchStartX._currentScale || 1
+            touchStartX._pinchPanX = touchStartX._currentPanX || 0
+            touchStartX._pinchPanY = touchStartX._currentPanY || 0
             touchStartX.current = null
           } else if (e.touches.length === 1) {
             touchStartX.current = e.touches[0].clientX
             touchStartX._panStartX = e.touches[0].clientX
             touchStartX._panStartY = e.touches[0].clientY
-            touchStartX._panX = touchStartX._currentPanX || 0
-            touchStartX._panY = touchStartX._currentPanY || 0
+            touchStartX._panBaseX = touchStartX._currentPanX || 0
+            touchStartX._panBaseY = touchStartX._currentPanY || 0
             touchStartX._pinchDist = null
           }
         }}
         onTouchMove={e => {
+          e.preventDefault()
           if (e.touches.length === 2 && touchStartX._pinchDist) {
-            e.preventDefault()
             const dx = e.touches[0].clientX - e.touches[1].clientX
             const dy = e.touches[0].clientY - e.touches[1].clientY
             const dist = Math.sqrt(dx*dx + dy*dy)
-            const scale = Math.min(Math.max(touchStartX._scale * (dist / touchStartX._pinchDist), 1), 5)
+            const scale = Math.min(Math.max(touchStartX._pinchScale * (dist / touchStartX._pinchDist), 1), 5)
             touchStartX._currentScale = scale
-            // Reset pan when zooming back to 1
-            if (scale <= 1.05) {
+            if (scale <= 1.02) {
               touchStartX._currentPanX = 0
               touchStartX._currentPanY = 0
             }
             const img = document.getElementById('fs-img')
-            const panX = scale <= 1.05 ? 0 : (touchStartX._currentPanX || 0)
-            const panY = scale <= 1.05 ? 0 : (touchStartX._currentPanY || 0)
-            if (img) img.style.transform = `scale(${scale}) translate(${panX}px, ${panY}px)`
-          } else if (e.touches.length === 1 && (touchStartX._currentScale || 1) > 1) {
-            e.preventDefault()
+            const px = scale <= 1.02 ? 0 : (touchStartX._currentPanX || 0)
+            const py = scale <= 1.02 ? 0 : (touchStartX._currentPanY || 0)
+            if (img) img.style.transform = `scale(${scale}) translate(${px}px, ${py}px)`
+          } else if (e.touches.length === 1 && (touchStartX._currentScale || 1) > 1.02) {
+            const scale = touchStartX._currentScale || 1
             const dx = e.touches[0].clientX - touchStartX._panStartX
             const dy = e.touches[0].clientY - touchStartX._panStartY
-            const scale = touchStartX._currentScale || 1
-            const img = document.getElementById('fs-img')
-            // Use actual rendered image size for bounds
-            const imgW = img ? img.offsetWidth : window.innerWidth
-            const imgH = img ? img.offsetHeight : window.innerHeight
-            const maxPanX = Math.max(0, (imgW * (scale - 1)) / (2 * scale))
-            const maxPanY = Math.max(0, (imgH * (scale - 1)) / (2 * scale))
-            const newPanX = Math.min(maxPanX, Math.max(-maxPanX, (touchStartX._panX || 0) + dx))
-            const newPanY = Math.min(maxPanY, Math.max(-maxPanY, (touchStartX._panY || 0) + dy))
+            const maxPan = (window.innerWidth * (scale - 1)) / (2 * scale)
+            const maxPanY = (window.innerHeight * (scale - 1)) / (2 * scale)
+            const newPanX = Math.min(maxPan, Math.max(-maxPan, touchStartX._panBaseX + dx))
+            const newPanY = Math.min(maxPanY, Math.max(-maxPanY, touchStartX._panBaseY + dy))
             touchStartX._currentPanX = newPanX
             touchStartX._currentPanY = newPanY
+            const img = document.getElementById('fs-img')
             if (img) img.style.transform = `scale(${scale}) translate(${newPanX}px, ${newPanY}px)`
           }
         }}
         onTouchEnd={e => {
           if (touchStartX._pinchDist) {
             touchStartX._pinchDist = null
+            if ((touchStartX._currentScale || 1) <= 1.02) {
+              touchStartX._currentScale = 1
+              touchStartX._currentPanX = 0
+              touchStartX._currentPanY = 0
+              const img = document.getElementById('fs-img')
+              if (img) img.style.transform = 'scale(1) translate(0px, 0px)'
+            }
             return
           }
           if (touchStartX.current === null) return
           const scale = touchStartX._currentScale || 1
-          if (scale <= 1) {
+          if (scale <= 1.02) {
             const diff = touchStartX.current - e.changedTouches[0].clientX
             if (Math.abs(diff) > 50) {
               const next = diff > 0

@@ -382,13 +382,13 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
           src={fullscreenPhoto}
           className="object-contain"
           style={{
-            maxWidth: '100vw',
-            maxHeight: '100vh',
-            width: 'auto',
-            height: 'auto',
+            width: '100vw',
+            height: '100vh',
+            objectFit: 'contain',
             transformOrigin: 'center center',
             transition: 'none',
-            display: 'block'
+            display: 'block',
+            flexShrink: 0
           }}
           alt="fullscreen"
           onDoubleClick={e => {

@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useApp } from '../context/AppContext'
 import { t, formatShortDate, getDayName } from '../lib/i18n'
 import Modal from './Modal'
+import TaskDetailModal from './TaskDetailModal'
+import { isPast, isToday, parseISO } from 'date-fns'
 
 const PAY_TYPES = ['daily','hourly','weekly','gc']
 
@@ -16,10 +18,14 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
   const [rateInput, setRateInput] = useState('')
   const [saving, setSaving]   = useState(false)
   const [properties, setProperties] = useState([])
+  const [tasks, setTasks] = useState([])
+  const [taskFilter, setTaskFilter] = useState('all') // 'all' or property_id
+  const [taskTab, setTaskTab] = useState('open') // 'open' or 'completed'
+  const [selectedTask, setSelectedTask] = useState(null)
   const isOwner = profile?.role === 'owner'
 
   useEffect(() => {
-    loadActivity(); loadWorkLogs(); loadPayRate(); loadProperties()
+    loadActivity(); loadWorkLogs(); loadPayRate(); loadProperties(); loadTasks()
   }, [contractor.id])
 
   async function loadActivity() {
@@ -42,6 +48,15 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
     if (data) { setPayRate(data); setPayType(data.pay_type); setRateInput(String(data.rate)) }
   }
 
+  async function loadTasks() {
+    const { data } = await supabase
+      .from('tasks')
+      .select('*, property:properties(id,street,name), creator:profiles!tasks_created_by_fkey(name,photo_url), completer:profiles!tasks_completed_by_fkey(name,photo_url)')
+      .eq('assigned_to', contractor.id)
+      .order('due_date', { ascending: true, nullsFirst: false })
+    setTasks(data || [])
+  }
+
   async function loadProperties() {
     const { data } = await supabase.from('property_contractors').select('property_id, properties(street,name)').eq('contractor_id', contractor.id)
     setProperties((data||[]).map(r=>r.properties).filter(Boolean))
@@ -57,6 +72,7 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
 
   const TABS = [
     { id:'info',     label: t('contractor.tabInfo', lang) },
+    { id:'tasks',    label: lang === 'es' ? 'Tareas' : 'Tasks' },
     { id:'activity', label: t('contractor.tabActivity', lang) },
     { id:'schedule', label: t('contractor.tabSchedule', lang) },
     ...(isOwner ? [{ id:'pay', label: t('contractor.tabPay', lang) }] : []),
@@ -148,6 +164,83 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
       )}
 
       {/* Pay (owner only) */}
+      {tab==='tasks' && (
+        <div>
+          {/* Property filter */}
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+            <button onClick={() => setTaskFilter('all')}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${taskFilter==='all' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              {lang === 'es' ? 'Todas' : 'All'}
+            </button>
+            {properties.map(p => (
+              <button key={p.id || p.street} onClick={() => setTaskFilter(p.id || p.street)}
+                className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${taskFilter===(p.id||p.street) ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                {p.street}
+              </button>
+            ))}
+          </div>
+
+          {/* Open / Completed toggle */}
+          <div className="flex bg-gray-100 rounded-xl p-1 mb-3">
+            <button onClick={() => setTaskTab('open')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${taskTab==='open' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500'}`}>
+              {lang === 'es' ? 'Abiertas' : 'Open'}
+            </button>
+            <button onClick={() => setTaskTab('completed')}
+              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${taskTab==='completed' ? 'bg-white text-brand-700 shadow-sm' : 'text-gray-500'}`}>
+              {lang === 'es' ? 'Completadas' : 'Completed'}
+            </button>
+          </div>
+
+          {/* Task list */}
+          <div className="space-y-2">
+            {tasks
+              .filter(t => taskTab === 'open' ? t.status === 'open' : t.status === 'completed')
+              .filter(t => taskFilter === 'all' || t.property_id === taskFilter || t.property?.street === taskFilter)
+              .map(task => {
+                const title = lang === 'es' ? (task.title_es || task.title_en) : (task.title_en || task.title_es)
+                const overdue = task.due_date && isPast(parseISO(task.due_date)) && !isToday(parseISO(task.due_date)) && task.status === 'open'
+                const today = task.due_date && isToday(parseISO(task.due_date))
+                return (
+                  <button key={task.id} onClick={() => setSelectedTask(task)}
+                    className="w-full bg-gray-50 rounded-xl p-3 text-left active:scale-95 transition-transform border border-gray-100">
+                    <div className="flex items-start gap-3">
+                      {task.photo_url && (
+                        <img src={task.photo_url} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" alt="" onError={e => e.currentTarget.style.display='none'} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-800 text-sm line-clamp-2">{title}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{task.property?.street}</p>
+                        {task.status === 'open' && task.due_date && (
+                          <span className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                            overdue ? 'bg-red-100 text-red-600' :
+                            today ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-500'
+                          }`}>
+                            {overdue ? '⚠️ Overdue' : today ? '📅 Today' : task.due_date}
+                          </span>
+                        )}
+                        {task.status === 'completed' && task.completed_at && (
+                          <span className="inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                            ✅ {lang === 'es' ? 'Completada' : 'Completed'} {formatShortDate(task.completed_at, lang)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
+            {tasks.filter(t => taskTab==='open' ? t.status==='open' : t.status==='completed')
+              .filter(t => taskFilter==='all' || t.property_id===taskFilter || t.property?.street===taskFilter)
+              .length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-8">
+                {lang === 'es' ? 'No hay tareas' : 'No tasks'}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {tab==='pay' && isOwner && (
         <div className="space-y-4">
           <div>
@@ -177,5 +270,15 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
         </div>
       )}
     </Modal>
+
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          lang={lang}
+          propertyId={selectedTask.property_id}
+          onClose={() => setSelectedTask(null)}
+          onRefresh={loadTasks}
+        />
+      )}
   )
 }

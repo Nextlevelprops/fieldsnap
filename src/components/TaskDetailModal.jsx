@@ -282,14 +282,19 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
         className="fixed inset-0 z-50 bg-black flex items-center justify-center overflow-hidden"
         onTouchStart={e => {
           if (e.touches.length === 2) {
-            // pinch start
             const dx = e.touches[0].clientX - e.touches[1].clientX
             const dy = e.touches[0].clientY - e.touches[1].clientY
-            touchStartX.current = null
             touchStartX._pinchDist = Math.sqrt(dx*dx + dy*dy)
             touchStartX._scale = touchStartX._currentScale || 1
-          } else {
+            touchStartX._midX = (e.touches[0].clientX + e.touches[1].clientX) / 2
+            touchStartX._midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+            touchStartX.current = null
+          } else if (e.touches.length === 1) {
             touchStartX.current = e.touches[0].clientX
+            touchStartX._panStartX = e.touches[0].clientX
+            touchStartX._panStartY = e.touches[0].clientY
+            touchStartX._panX = touchStartX._currentPanX || 0
+            touchStartX._panY = touchStartX._currentPanY || 0
             touchStartX._pinchDist = null
           }
         }}
@@ -302,7 +307,18 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             const scale = Math.min(Math.max(touchStartX._scale * (dist / touchStartX._pinchDist), 1), 5)
             touchStartX._currentScale = scale
             const img = document.getElementById('fs-img')
-            if (img) img.style.transform = `scale(${scale})`
+            if (img) img.style.transform = `scale(${scale}) translate(${touchStartX._currentPanX || 0}px, ${touchStartX._currentPanY || 0}px)`
+          } else if (e.touches.length === 1 && (touchStartX._currentScale || 1) > 1) {
+            e.preventDefault()
+            const dx = e.touches[0].clientX - touchStartX._panStartX
+            const dy = e.touches[0].clientY - touchStartX._panStartY
+            const newPanX = (touchStartX._panX || 0) + dx
+            const newPanY = (touchStartX._panY || 0) + dy
+            touchStartX._currentPanX = newPanX
+            touchStartX._currentPanY = newPanY
+            const img = document.getElementById('fs-img')
+            const scale = touchStartX._currentScale || 1
+            if (img) img.style.transform = `scale(${scale}) translate(${newPanX}px, ${newPanY}px)`
           }
         }}
         onTouchEnd={e => {
@@ -311,48 +327,58 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             return
           }
           if (touchStartX.current === null) return
-          const diff = touchStartX.current - e.changedTouches[0].clientX
           const scale = touchStartX._currentScale || 1
-          if (scale <= 1 && Math.abs(diff) > 50) {
-            const next = diff > 0
-              ? Math.min(fullscreenIndex + 1, total - 1)
-              : Math.max(fullscreenIndex - 1, 0)
-            touchStartX._currentScale = 1
-            const img = document.getElementById('fs-img')
-            if (img) img.style.transform = 'scale(1)'
-            setFullscreenIndex(next)
-            setFullscreenPhoto(fullscreenPhotos[next])
+          if (scale <= 1) {
+            const diff = touchStartX.current - e.changedTouches[0].clientX
+            if (Math.abs(diff) > 50) {
+              const next = diff > 0
+                ? Math.min(fullscreenIndex + 1, total - 1)
+                : Math.max(fullscreenIndex - 1, 0)
+              touchStartX._currentScale = 1
+              touchStartX._currentPanX = 0
+              touchStartX._currentPanY = 0
+              const img = document.getElementById('fs-img')
+              if (img) img.style.transform = 'scale(1) translate(0px, 0px)'
+              setFullscreenIndex(next)
+              setFullscreenPhoto(fullscreenPhotos[next])
+            }
           }
           touchStartX.current = null
         }}
       >
         <button className="absolute top-4 right-4 text-white text-3xl z-10" onClick={() => {
           touchStartX._currentScale = 1
+          touchStartX._currentPanX = 0
+          touchStartX._currentPanY = 0
           setFullscreenPhoto(null)
         }}>✕</button>
         {total > 1 && (
           <p className="absolute top-4 left-0 right-0 text-center text-white text-sm z-10">{fullscreenIndex + 1} / {total}</p>
         )}
-        {fullscreenIndex > 0 && (
+        {fullscreenIndex > 0 && (touchStartX._currentScale || 1) <= 1 && (
           <button onClick={() => {
             touchStartX._currentScale = 1
+            touchStartX._currentPanX = 0
+            touchStartX._currentPanY = 0
             const img = document.getElementById('fs-img')
-            if (img) img.style.transform = 'scale(1)'
+            if (img) img.style.transform = 'scale(1) translate(0px, 0px)'
             const i = fullscreenIndex - 1; setFullscreenIndex(i); setFullscreenPhoto(fullscreenPhotos[i])
           }} className="absolute left-3 text-white text-4xl z-10 px-2">‹</button>
         )}
         <img
           id="fs-img"
           src={fullscreenPhoto}
-          className="max-w-full max-h-full object-contain transition-transform duration-100"
-          style={{transformOrigin: 'center center'}}
+          className="max-w-full max-h-full object-contain"
+          style={{transformOrigin: 'center center', transition: 'none'}}
           alt="fullscreen"
           onDoubleClick={e => {
             const img = e.currentTarget
             const current = touchStartX._currentScale || 1
             const next = current > 1 ? 1 : 2.5
             touchStartX._currentScale = next
-            img.style.transform = `scale(${next})`
+            touchStartX._currentPanX = 0
+            touchStartX._currentPanY = 0
+            img.style.transform = `scale(${next}) translate(0px, 0px)`
           }}
         />
         {fullscreenIndex < total - 1 && (

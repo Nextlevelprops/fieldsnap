@@ -371,8 +371,16 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
         <img
           id="fs-img"
           src={fullscreenPhoto}
-          className="max-w-full max-h-full object-contain"
-          style={{transformOrigin: 'center center', transition: 'none'}}
+          className="object-contain"
+          style={{
+            maxWidth: '100vw',
+            maxHeight: '100vh',
+            width: 'auto',
+            height: 'auto',
+            transformOrigin: 'center center',
+            transition: 'none',
+            display: 'block'
+          }}
           alt="fullscreen"
           onDoubleClick={e => {
             const img = e.currentTarget

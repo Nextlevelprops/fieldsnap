@@ -313,14 +313,16 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             const dx = e.touches[0].clientX - touchStartX._panStartX
             const dy = e.touches[0].clientY - touchStartX._panStartY
             const scale = touchStartX._currentScale || 1
-            // Limit pan so image can't go off screen
-            const maxPanX = (window.innerWidth * (scale - 1)) / (2 * scale)
-            const maxPanY = (window.innerHeight * (scale - 1)) / (2 * scale)
+            const img = document.getElementById('fs-img')
+            // Use actual rendered image size for bounds
+            const imgW = img ? img.offsetWidth : window.innerWidth
+            const imgH = img ? img.offsetHeight : window.innerHeight
+            const maxPanX = Math.max(0, (imgW * (scale - 1)) / (2 * scale))
+            const maxPanY = Math.max(0, (imgH * (scale - 1)) / (2 * scale))
             const newPanX = Math.min(maxPanX, Math.max(-maxPanX, (touchStartX._panX || 0) + dx))
             const newPanY = Math.min(maxPanY, Math.max(-maxPanY, (touchStartX._panY || 0) + dy))
             touchStartX._currentPanX = newPanX
             touchStartX._currentPanY = newPanY
-            const img = document.getElementById('fs-img')
             if (img) img.style.transform = `scale(${scale}) translate(${newPanX}px, ${newPanY}px)`
           }
         }}

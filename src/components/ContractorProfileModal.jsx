@@ -107,8 +107,24 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
             }
             <div>
               <p className="font-bold text-gray-800 text-lg">{contractor.name}</p>
-              {contractor.phone && <p className="text-gray-500 text-sm">📞 {contractor.phone}</p>}
-              {contractor.email && <p className="text-gray-500 text-sm">✉️ {contractor.email}</p>}
+              {contractor.phone && (
+                <div className="flex gap-2 mt-2">
+                  <a href={`tel:${contractor.phone}`}
+                    className="flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-full active:scale-95">
+                    📞 {lang === 'es' ? 'Llamar' : 'Call'}
+                  </a>
+                  <a href={`sms:${contractor.phone}`}
+                    className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full active:scale-95">
+                    💬 {lang === 'es' ? 'Mensaje' : 'Text'}
+                  </a>
+                </div>
+              )}
+              {contractor.email && (
+                <a href={`mailto:${contractor.email}`}
+                  className="flex items-center gap-1 bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1.5 rounded-full active:scale-95 mt-1 w-fit">
+                  ✉️ {contractor.email}
+                </a>
+              )}
             </div>
           </div>
           <div>

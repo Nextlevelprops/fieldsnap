@@ -86,6 +86,7 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
   }
 
   return (
+    <>
     <Modal onClose={onClose} title={contractor.name}>
       <div className="flex border-b border-gray-100 mb-4 -mt-1">
         {TABS.map(tb => (
@@ -280,5 +281,6 @@ export default function ContractorProfileModal({ contractor, lang, onClose }) {
           onRefresh={loadTasks}
         />
       )}
+    </>
   )
 }

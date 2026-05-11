@@ -306,8 +306,15 @@ export default function TaskDetailModal({ task, lang, propertyId, onClose, onRef
             const dist = Math.sqrt(dx*dx + dy*dy)
             const scale = Math.min(Math.max(touchStartX._scale * (dist / touchStartX._pinchDist), 1), 5)
             touchStartX._currentScale = scale
+            // Reset pan when zooming back to 1
+            if (scale <= 1.05) {
+              touchStartX._currentPanX = 0
+              touchStartX._currentPanY = 0
+            }
             const img = document.getElementById('fs-img')
-            if (img) img.style.transform = `scale(${scale}) translate(${touchStartX._currentPanX || 0}px, ${touchStartX._currentPanY || 0}px)`
+            const panX = scale <= 1.05 ? 0 : (touchStartX._currentPanX || 0)
+            const panY = scale <= 1.05 ? 0 : (touchStartX._currentPanY || 0)
+            if (img) img.style.transform = `scale(${scale}) translate(${panX}px, ${panY}px)`
           } else if (e.touches.length === 1 && (touchStartX._currentScale || 1) > 1) {
             e.preventDefault()
             const dx = e.touches[0].clientX - touchStartX._panStartX
